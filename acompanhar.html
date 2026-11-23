@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Exact · Acompanhe seu caso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#00205b">
+<style>
+:root{--navy:#00205b;--teal:#de2777;--teal-d:#c01c62;--bg:#eef2f8;--line:#dbe2ee;--txt:#14204a;--mut:#5b6789}
+h1,.agora b,ol li b{font-family:Montserrat,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--txt);background:var(--bg)}
+header{background:linear-gradient(180deg,rgba(0,32,91,.0),rgba(0,32,91,.35)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='%23ffffff' fill-opacity='.07' font-family='monospace' font-size='15'%3E%3Ctext x='4' y='18'%3E0 1 1 0 1 0 0 1 1 0 1%3C/text%3E%3Ctext x='4' y='48'%3E1 0 0 1 0 1 1 0 0 1 0%3C/text%3E%3Ctext x='4' y='78'%3E0 0 1 1 0 1 0 1 1 0 0%3C/text%3E%3Ctext x='4' y='108'%3E1 1 0 0 1 0 1 0 0 1 1%3C/text%3E%3C/g%3E%3C/svg%3E"),linear-gradient(160deg,#0d3f7e 0%,#00205b 70%);color:#fff;padding:28px 16px 62px;text-align:center}
+header img{width:min(190px,55vw);height:auto;display:block;margin:0 auto}
+header p{margin:12px 0 0;color:#c6d2ea;font-weight:600}
+main{max-width:560px;margin:-40px auto 40px;padding:0 12px}
+.box{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,32,91,.06),0 4px 16px rgba(0,32,91,.06);margin-bottom:14px}
+.os{font-size:12px;font-weight:700;color:var(--mut);letter-spacing:.04em}
+h1{margin:2px 0 4px;font-size:21px}
+.info{color:var(--mut);font-size:14px}
+.agora{margin-top:12px;background:#fdeef5;border-radius:10px;padding:12px;color:var(--teal-d)}
+.agora b{display:block;font-size:18px;color:var(--txt)}
+ol{list-style:none;margin:0;padding:0}
+ol li{position:relative;padding:0 0 18px 30px}
+ol li:before{content:"";position:absolute;left:8px;top:20px;bottom:-2px;width:2px;background:var(--line)}
+ol li:last-child:before{display:none}
+ol li i{position:absolute;left:0;top:2px;width:18px;height:18px;border-radius:50%;border:2px solid #c8d4de;background:#fff}
+ol li.feita i{background:var(--teal);border-color:var(--teal)}
+ol li.feita:before{background:var(--teal)}
+ol li.atual i{box-shadow:0 0 0 5px rgba(222,39,119,.2)}
+ol li.atual b{color:var(--teal-d)}
+ol li small{display:block;color:var(--mut)}
+ol li:not(.feita){color:var(--mut)}
+.btn{display:block;text-align:center;background:#1f9d55;color:#fff;border-radius:10px;padding:12px;font-weight:700;text-decoration:none}
+.erro{text-align:center;color:var(--mut)}
+</style>
+</head>
+<body>
+<header><img src="logo-exact.png" alt="Exact Odontologia Digital"><p>Acompanhe o andamento do seu caso</p></header>
+<main id="m"><div class="box erro">Carregando…</div></main>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // mesma URL do Apps Script
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+const fmtD = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') ? s.split('-').reverse().join('/') : s;
+
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const os = q.get('os'), k = q.get('k');
+  let j;
+  try {
+    if (!API_URL) j = {ok:true, caso:{id:os||'EX-00099', paciente:'Maria Silva', servico:'Coroa sobre implante', dentes:'11', dentista:'Ana Paula Souza', criadoEm:new Date(Date.now()-5*864e5).toISOString(), prazo:'', etapa:'Em desenho (CAD)'},
+      etapas:[{nome:'Pedido recebido',quando:new Date(Date.now()-5*864e5).toISOString(),feita:true},{nome:'Ordem de serviço aberta',quando:new Date(Date.now()-4*864e5).toISOString(),feita:true},{nome:'Em desenho (CAD)',quando:new Date(Date.now()-864e5).toISOString(),feita:true,atual:true},{nome:'Desenho aprovado'},{nome:'Em produção'},{nome:'Entregue'}], whatsLab:''};
+    else {
+      if (!os || !k) throw new Error('Link incompleto. Peça o link de acompanhamento ao laboratório.');
+      const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({acao:'acompanhar', id:os, k})});
+      j = await r.json(); if (!j.ok) throw new Error(j.erro);
+    }
+  } catch(e){ document.getElementById('m').innerHTML = `<div class="box erro">${esc(e.message)}</div>`; return; }
+
+  const c = j.caso;
+  let wa = '';
+  if (j.whatsLab){ let f = j.whatsLab.replace(/\D/g,''); if (f.length <= 11) f = '55'+f;
+    wa = `<a class="btn" target="_blank" rel="noopener" href="https://wa.me/${f}?text=${encodeURIComponent(`Olá! Sobre o caso ${c.id} (${c.paciente}):`)}">Falar com o laboratório no WhatsApp</a>`; }
+  document.getElementById('m').innerHTML = `
+    <div class="box">
+      <div class="os">${esc(c.id)}</div>
+      <h1>${esc(c.paciente)}</h1>
+      <div class="info">${esc(c.servico)}${c.dentes?` · dentes ${esc(c.dentes)}`:''}<br>Dr(a). ${esc(c.dentista)} · pedido em ${fmt(c.criadoEm)}${c.prazo?` · prazo ${fmtD(c.prazo)}`:''}</div>
+      <div class="agora">Situação atual<b>${esc(c.etapa)}</b></div>
+    </div>
+    <div class="box"><ol>${j.etapas.map(e => `<li class="${e.feita?'feita':''} ${e.atual?'atual':''}"><i></i><b>${esc(e.nome)}</b>${e.quando?`<small>${fmt(e.quando)}</small>`:''}</li>`).join('')}</ol></div>
+    ${wa}`;
+})();
+</script>
+</body>
+</html>
