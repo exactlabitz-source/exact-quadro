@@ -98,6 +98,34 @@ h1,h2,h3,h4,.tab,.btn,.kpi b{font-family:Montserrat,"Segoe UI",system-ui,sans-se
 .modal.saindo .mbox{animation:mPopOut .16s ease forwards}
 @keyframes mFadeOut{to{opacity:0}}
 @keyframes mPopOut{to{opacity:0;transform:translateY(10px) scale(.98)}}
+/* entrada de casos */
+.tab-sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.tab-entrada{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border:2px solid var(--teal);background:#fff;color:var(--teal-d);border-radius:999px;padding:6px 8px 6px 14px;font:700 13.5px Montserrat,"Segoe UI",system-ui,sans-serif;cursor:pointer}
+.tab-entrada svg{width:17px;height:17px}
+.tab-entrada b{min-width:28px;height:24px;display:inline-grid;place-items:center;border-radius:999px;background:#eef2f8;color:var(--mut);font-size:13px;padding:0 8px}
+.tab-entrada.tem{background:var(--teal);color:#fff;box-shadow:0 4px 14px rgba(222,39,119,.35)}
+.tab-entrada.tem b{background:#ffd23f;color:#3d2c00;font-size:15px;animation:pulsar 1.6s ease-in-out infinite}
+.tab-entrada.on{outline:3px solid rgba(222,39,119,.25);outline-offset:2px}
+@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(255,210,63,.75)}50%{box-shadow:0 0 0 7px rgba(255,210,63,0)}}
+#entrada{flex:1;overflow-y:auto;padding:18px 16px}
+.ent-head h2{margin:0;font-size:20px;color:var(--navy)}
+.ent-head p{margin:2px 0 14px;color:var(--mut)}
+.ent-head p b{color:var(--teal-d)}
+.ent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.ent-card{background:#fff;border-radius:12px;box-shadow:var(--sh);border-left:5px solid var(--teal);padding:14px 16px;cursor:pointer;transition:transform .22s ease,opacity .22s ease,box-shadow .15s}
+.ent-card:hover{box-shadow:0 4px 18px rgba(0,32,91,.14)}
+.ent-card.saindo{transform:translateX(40px) scale(.96);opacity:0}
+.ent-card .pac{font-size:16px;margin:2px 0 6px}
+.ent-serv{margin-bottom:6px}
+.ent-obs{margin:8px 0 0;font-size:12.5px;color:var(--txt);background:#f6f8fc;border-radius:8px;padding:7px 9px;white-space:pre-wrap}
+.ent-ver{margin-left:auto;color:var(--teal-d);font-weight:700;cursor:pointer}
+.ent-dest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.ent-dest span{font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.ent-dest button{border:1px solid #c9d3e6;background:#f3f6fc;color:var(--navy);border-radius:999px;padding:5px 11px;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.ent-dest button:hover{background:var(--navy);border-color:var(--navy);color:#fff}
+.ent-vazio{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;color:var(--mut);padding:60px 20px}
+.ent-vazio svg{width:46px;height:46px;color:#2e9e5b;background:#e3f5ea;border-radius:50%;padding:10px}
+.ent-vazio b{color:var(--navy);font-size:16px}
 /* arrastar */
 .card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:box-shadow .15s, transform .15s}
 .card.segurando{transform:scale(.97);box-shadow:0 0 0 2px var(--teal)}
@@ -247,6 +275,7 @@ details.serv label input{width:auto}
   <div id="demo" hidden>Modo demonstração: dados fictícios, nada é salvo. Cole a URL do Apps Script em <code>API_URL</code> para usar de verdade.</div>
   <nav class="tabs" id="tabs"></nav>
   <main id="board"></main>
+  <section id="entrada" hidden></section>
   <section id="reports" hidden></section>
 </div>
 
@@ -313,13 +342,33 @@ async function iniciar(){
   $('#u-nome').textContent = S.user.nome;
 }
 
-async function carregar(){
+const ENTRADA = 'Entrada dos Casos';          // quadro que funciona como caixa de entrada
+const ehEntrada = nome => nome === ENTRADA;
+const naEntrada = () => S.casos.filter(c => ehEntrada(c.quadro));
+const quadrosTrabalho = () => S.quadros.filter(q => !ehEntrada(q.nome));
+function haQuanto(iso){
+  const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 6e4));
+  if (m < 1) return 'agora'; if (m < 60) return `há ${m} min`;
+  const h = Math.floor(m / 60); if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24); return `há ${d} dia${d>1?'s':''}`;
+}
+
+async function carregar(silencioso){
+  const antes = S.carregado ? naEntrada().length : null;
   const j = await api('listar');
   Object.assign(S, {quadros:j.quadros, casos:j.casos, grupos:j.grupos||[], etiquetas:j.etiquetas||[], equipe:j.equipe||[], urlAcomp:j.urlAcomp||'', msgWhats:j.msgWhats||'', autoWhats:!!j.autoWhats, perfil:(j.usuario?.perfil||'').toLowerCase()});
   renderFiltroLbl();
-  if (!S.quadros.some(q => q.nome === S.atual)) S.atual = (S.quadros[0]||{}).nome;
+  if (!quadrosTrabalho().some(q => q.nome === S.atual)) S.atual = (quadrosTrabalho()[0]||{}).nome;
+  const n = naEntrada().length;
+  S.carregado = true;
+  if (antes === null && n > 0) S.view = 'entrada';                 // ao abrir, mostra os casos novos primeiro
+  if (silencioso && antes !== null && n > antes) toast(`${n - antes} caso(s) novo(s) chegaram na Entrada`, false, 'Ver', () => { S.view = 'entrada'; render(); });
+  document.title = (n ? `(${n}) ` : '') + 'Exact · Quadro de Casos';
+  if (silencioso && (!$('#modal').hidden || DR.st)) { renderTabs(); return; }
   render();
 }
+// atualiza sozinho a cada 60 s para a equipe ver os pedidos que chegam
+setInterval(() => { if (S.user && !document.hidden && S.view !== 'rel') carregar(true).catch(() => {}); }, 60000);
 
 /* ===== AUXILIARES DE CASO ===== */
 const quadro = nome => S.quadros.find(q => q.nome === nome);
@@ -344,17 +393,21 @@ function linkWhats(c, etapa){
 /* ===== RENDER ===== */
 function render(){
   renderTabs();
-  $('#board').hidden = S.view !== 'quadro'; $('#reports').hidden = S.view !== 'rel'; $('#tabs').hidden = S.view !== 'quadro';
-  $('#b-quadro').classList.toggle('on', S.view==='quadro'); $('#b-rel').classList.toggle('on', S.view==='rel');
-  if (S.view === 'quadro') renderBoard(); else renderRel();
+  $('#board').hidden = S.view !== 'quadro'; $('#entrada').hidden = S.view !== 'entrada'; $('#reports').hidden = S.view !== 'rel'; $('#tabs').hidden = S.view === 'rel';
+  $('#b-quadro').classList.toggle('on', S.view!=='rel'); $('#b-rel').classList.toggle('on', S.view==='rel');
+  if (S.view === 'quadro') renderBoard(); else if (S.view === 'entrada') renderEntrada(); else renderRel();
 }
 
 function renderTabs(){
-  $('#tabs').innerHTML = S.quadros.map(q => {
+  const nE = naEntrada().filter(bate).length;
+  const btnE = `<button class="tab-entrada ${S.view==='entrada'?'on':''} ${nE?'tem':''}" id="b-entrada" title="Casos novos aguardando distribuição">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.5-6.9A2 2 0 0016.7 4H7.3a2 2 0 00-1.8 1.1z"/></svg>
+    Entrada de casos <b>${nE}</b></button><span class="tab-sep"></span>`;
+  $('#tabs').innerHTML = btnE + quadrosTrabalho().map(q => {
     const todos = S.casos.filter(c => c.quadro === q.nome);
     const n = (S.busca || S.filtroLbl) ? todos.filter(bate).length : todos.length;
-    return `<button class="tab ${q.nome===S.atual?'on':''} ${(S.busca||S.filtroLbl)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
-  }).join('') + (S.perfil==='admin' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
+    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
+  }).join('') + (S.perfil==='admin' && S.view==='quadro' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
 }
 
 function cardHTML(c){
@@ -385,15 +438,50 @@ function renderBoard(){
   }).join('');
 }
 
+/* ===== ENTRADA DE CASOS (caixa de entrada) ===== */
+function renderEntrada(){
+  const lista = naEntrada().filter(bate).sort((a,b) => (a.criadoEm||'') < (b.criadoEm||'') ? -1 : 1);
+  const destinos = quadrosTrabalho();
+  $('#entrada').innerHTML = `
+    <div class="ent-head">
+      <div><h2>Entrada de casos</h2>
+      <p>${lista.length ? `<b>${lista.length}</b> caso${lista.length>1?'s':''} aguardando distribuição · os mais antigos primeiro` : 'Tudo distribuído.'}</p></div>
+    </div>
+    ${lista.length ? `<div class="ent-grid">${lista.map(c => `
+      <article class="ent-card" data-id="${esc(c.id)}">
+        <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${dias(c.criadoEm)>=1?'a':''}">chegou ${haQuanto(c.criadoEm)}</span></div>
+        ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
+        <div class="pac">${esc(c.paciente)}</div>
+        <div class="ent-serv">${servicosDe(c).map(x=>`<span class="tag-serv">${esc(x)}</span>`).join('')}</div>
+        <div class="meta">Dr(a). ${esc(c.dentista)}${c.origem?` · ${esc(c.origem)}`:''}${c.dentes?` · dentes ${esc(c.dentes)}`:''}</div>
+        ${c.observacoes ? `<p class="ent-obs">${esc(c.observacoes.length > 140 ? c.observacoes.slice(0,140)+'…' : c.observacoes)}</p>` : ''}
+        <div class="foot">${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)} anexo(s)</span>`:''}${c.prazo?`<span class="ico">${IC.cal}prazo ${fmtD(c.prazo)}</span>`:''}<a class="ent-ver" data-abrir>Ver pedido completo</a></div>
+        <div class="ent-dest"><span>Enviar para:</span>${destinos.map(q => `<button data-dest="${esc(q.nome)}">${esc(q.nome)}</button>`).join('')}</div>
+      </article>`).join('')}</div>`
+    : `<div class="ent-vazio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6L9 17l-5-5"/></svg><b>Nenhum caso esperando.</b><span>Quando um dentista enviar um pedido, ele aparece aqui e o botão "Entrada de casos" acende.</span></div>`}`;
+}
+
+$('#entrada').addEventListener('click', async e => {
+  const card = e.target.closest('.ent-card'); if (!card) return;
+  const dest = e.target.closest('[data-dest]');
+  if (!dest) { abrirCaso(card.dataset.id); return; }
+  const q = quadro(dest.dataset.dest); const col = q?.colunas[0]?.nome; if (!col) return;
+  card.classList.add('saindo');
+  await new Promise(r => setTimeout(r, 220));
+  const ok = await mover(card.dataset.id, q.nome, col);
+  if (ok) toast(`${card.dataset.id} enviado para ${q.nome}`);
+});
+
 /* ===== EVENTOS DO QUADRO ===== */
 $('#tabs').addEventListener('click', e => {
+  if (e.target.closest('#b-entrada')) { S.view = 'entrada'; render(); return; }
   if (e.target.id === 'b-etapas') return editarQuadro(S.atual);
   if (e.target.id === 'b-novoq') return editarQuadro('');
-  const t = e.target.closest('.tab'); if (t){ S.atual = t.dataset.q; render(); }
+  const t = e.target.closest('.tab'); if (t){ S.atual = t.dataset.q; S.view = 'quadro'; render(); }
 });
 $('#f-lbl').onchange = e => { S.filtroLbl = e.target.value; render(); };
 $('#busca').addEventListener('input', e => { S.busca = e.target.value; if (S.view==='quadro') render(); });
-$('#b-quadro').onclick = () => { S.view='quadro'; render(); };
+$('#b-quadro').onclick = () => { S.view = S.view==='rel' ? 'quadro' : S.view; render(); };
 $('#b-rel').onclick = async () => { S.view='rel'; render(); await carregarRel(); };
 $('#b-atual').onclick = async () => { try{ await carregar(); if(S.view==='rel') await carregarRel(); toast('Atualizado'); }catch(e){ toast(e.message,true); } };
 $('#b-sair').onclick = sair;
@@ -524,7 +612,7 @@ async function mover(id, q, col, pos){
     if (mesma) return true;
     if (r.avisar && r.enviadoAuto) toast(`${c.dentista} foi avisado(a) no WhatsApp`);
     else if (r.avisar && c.dentistaWhats) toast(`Avisar Dr(a). ${c.dentista}: "${r.etapa}"?`, false, 'Abrir WhatsApp', () => window.open(linkWhats(c, r.etapa), '_blank'));
-    else toast(`Movido para ${col}`);
+    else if (!ehEntrada(ant.quadro)) toast(`Movido para ${col}`);
     return true;
   } catch(e){ Object.assign(c, ant); render(); toast('Não foi possível mover: '+e.message, true); return false; }
 }
@@ -890,7 +978,7 @@ function toast(msg, erro=false, acaoTxt, acaoFn){
 
 /* ===== MODO DEMONSTRAÇÃO (sem API_URL) ===== */
 const DEMO_Q = {
-  'Entrada dos Casos':[['Pedidos não revisados','Pedido recebido'],['Arquivos alinhados'],['Arquivos enviados'],['CAD autorizado','Desenho aprovado',1],['Recebidos'],['Entrega Final','Pronto para entrega',1]],
+  'Entrada dos Casos':[['Novos pedidos','Pedido recebido']],
   'Mega Prótese':[['Ordem de Serviço + Alinhamento dos arquivos - SAYMON'],['CAD - Mega Prótese','Em desenho (CAD)',1],['Autorizado - Tiago'],['CAM - Mega Prótese','Em produção',1],['Ajuste Cerâmica - Mega Prótese'],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
   'IOA':[['Ordem de serviço - SAYMON'],['CAD (Desenho) - SAYMON','Em desenho (CAD)',1],['Autorizado - Tiago / Lilian'],['CAM (Imprimir) - SAYMON','Em produção',1],['Para Entregar','Pronto para entrega',1],['Trabalhos Finalizados']],
   'Zlab':[['Ordem de serviço + Alinhamento dos arquivos'],['CAD - ExactLab','Em desenho (CAD)',1],['Impressão dos Modelos - EXACT'],['CAM - Zlab','Em produção',1],['Dentes fresando e Sinterizando'],['Enviados para EXACTLAB'],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
@@ -919,12 +1007,11 @@ function gerarDemo(){
   const casos = [], hist = [], coms = [];
   const agora = Date.now();
   for (let i = 1; i <= 64; i++){
-    const s = pick(serv), s2 = rnd()<.15 ? pick(serv) : '', idadeD = rnd()<.7 ? rnd()*30 : 30 + rnd()*120, criado = agora - idadeD*DIA;
+    const fase = rnd(), s = pick(serv), s2 = rnd()<.15 ? pick(serv) : '', idadeD = fase < 0.12 ? rnd()*1.5 : rnd()<.7 ? rnd()*30 : 30 + rnd()*120, criado = agora - idadeD*DIA;
     const id = 'EX-' + String(i).padStart(5,'0');
-    const passos = [['Entrada dos Casos','Pedidos não revisados']];
+    const passos = [['Entrada dos Casos','Novos pedidos']];
     const qd = quadros.find(q => q.nome === destino[s]);
-    const fase = rnd();
-    if (fase < 0.18) { const ent = quadros[0]; const k = Math.floor(rnd()*3); for (let j=1;j<=k;j++) passos.push([ent.nome, ent.colunas[j].nome]); }
+    if (fase < 0.12) { /* continua na Entrada */ }
     else { qd.colunas.forEach((c,j) => passos.push([qd.nome, c.nome])); const ate = idadeD > 45 ? qd.colunas.length : 1 + Math.floor(rnd()*qd.colunas.length); passos.length = Math.min(passos.length, ate+1); }
     const dur = passos.slice(1).map(() => 0.2 + rnd()*rnd()*9);
     const tot = dur.reduce((a,b)=>a+b,0), lim = idadeD*0.92, f = tot > lim ? lim/tot : 1;
