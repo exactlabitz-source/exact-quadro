@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exact · Quadro de Casos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#00205b">
+<style>
+:root{
+  --navy:#00205b;--navy2:#0c3070;--teal:#de2777;--teal-d:#c01c62;--bg:#e9eef6;--card:#fff;--line:#d6deea;
+  --txt:#14204a;--mut:#5b6789;--amber:#b7791f;--amber-bg:#fdf3e1;--red:#c0392b;--red-bg:#fbe7e5;--green:#1f8a4c;
+  --r:10px;--sh:0 1px 2px rgba(15,42,61,.08),0 1px 6px rgba(15,42,61,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--txt);background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-weight:600;text-decoration:none;display:inline-block}
+.btn:hover{border-color:#b9c7d3}
+.btn.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.pri:hover{background:var(--teal-d)}
+.btn.wa{background:#1f9d55;border-color:#1f9d55;color:#fff}
+.btn.danger{color:var(--red)}
+.btn.danger.confirm{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.muted{color:var(--mut)}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(14,159,154,.35);border-color:var(--teal)}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:0 0 4px}
+
+/* Login */
+#login{min-height:100%;display:grid;place-items:center;background:linear-gradient(180deg,rgba(0,32,91,.0),rgba(0,32,91,.35)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='%23ffffff' fill-opacity='.07' font-family='monospace' font-size='15'%3E%3Ctext x='4' y='18'%3E0 1 1 0 1 0 0 1 1 0 1%3C/text%3E%3Ctext x='4' y='48'%3E1 0 0 1 0 1 1 0 0 1 0%3C/text%3E%3Ctext x='4' y='78'%3E0 0 1 1 0 1 0 1 1 0 0%3C/text%3E%3Ctext x='4' y='108'%3E1 1 0 0 1 0 1 0 0 1 1%3C/text%3E%3C/g%3E%3C/svg%3E"),linear-gradient(160deg,#0d3f7e 0%,#00205b 70%)}
+.login-logo{width:200px;display:block;margin:0 auto 18px}
+.top .logo{height:30px;width:auto;display:block}
+h1,h2,h3,h4,.tab,.btn,.kpi b{font-family:Montserrat,"Segoe UI",system-ui,sans-serif}
+.login-box{background:#fff;border-radius:14px;padding:28px;width:min(360px,92vw);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.login-box h1{margin:0 0 2px;font-size:20px}
+.login-box p{margin:0 0 18px}
+.login-box .f{margin-bottom:12px}
+.erro{color:var(--red);min-height:18px;font-size:13px;margin:4px 0 8px}
+.brand{font-weight:800;letter-spacing:.06em}
+.brand b{color:var(--teal)}
+.brand{font-family:inherit}
+
+/* App */
+#app{display:flex;flex-direction:column;height:100%}
+.top{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='%23ffffff' fill-opacity='.07' font-family='monospace' font-size='15'%3E%3Ctext x='4' y='18'%3E0 1 1 0 1 0 0 1 1 0 1%3C/text%3E%3Ctext x='4' y='48'%3E1 0 0 1 0 1 1 0 0 1 0%3C/text%3E%3Ctext x='4' y='78'%3E0 0 1 1 0 1 0 1 1 0 0%3C/text%3E%3Ctext x='4' y='108'%3E1 1 0 0 1 0 1 0 0 1 1%3C/text%3E%3C/g%3E%3C/svg%3E"),linear-gradient(90deg,#00205b,#0d3f7e);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.top .brand{font-size:16px;margin-right:6px}
+.top input{background:var(--navy2);border-color:#2a5371;color:#fff;width:240px;padding:7px 10px}
+.top input::placeholder{color:#9db4c6}
+.top .sp{flex:1}
+.top .btn{background:transparent;color:#fff;border-color:#2f5876}
+.top .btn.on{background:var(--teal);border-color:var(--teal)}
+.top .user{font-size:13px;color:#b9cbd9}
+.tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:#fff;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tab{white-space:nowrap;border:1px solid var(--line);background:#f6f8fa;border-radius:999px;padding:6px 12px;font-weight:600;font-size:13px}
+.tab span{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:999px;background:#e3eaf0;font-size:12px;text-align:center}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tab:hover{border-color:#aab8d0}
+.tab.on span{background:var(--teal);color:#fff}
+.tab.hit span{background:#ffe08a;color:#5c4400}
+#demo{background:#fff7e0;color:#6b5100;padding:7px 16px;font-size:13px;border-bottom:1px solid #f1dfa8}
+
+/* Board */
+#board{flex:1;display:flex;gap:12px;padding:14px 16px;overflow-x:auto;align-items:flex-start}
+.col{background:#e3e9ef;border-radius:12px;min-width:272px;width:272px;max-height:100%;display:flex;flex-direction:column}
+.col header{padding:10px 12px 6px;display:flex;align-items:flex-start;gap:6px}
+.col h3{margin:0;font-size:13px;font-weight:700;flex:1;line-height:1.3}
+.col .n{background:#fff;border-radius:999px;padding:0 8px;font-size:12px;font-weight:700;color:var(--mut)}
+.wa-tag{font-size:10px;font-weight:700;color:#1f7a45;background:#dff3e7;border-radius:4px;padding:1px 5px}
+.cards{padding:4px 8px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:40px}
+.vazio{color:#9aabb9;text-align:center;font-size:12px;padding:8px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:10px 11px;cursor:grab;border-left:4px solid transparent}
+.card:hover{box-shadow:0 2px 10px rgba(15,42,61,.14)}
+.card.drag{opacity:.45}
+.card.a{border-left-color:#e6a23c}
+.card.r{border-left-color:var(--red)}
+.c-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.os{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.03em}
+.age{font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;background:#edf1f4;color:var(--mut)}
+.age.a{background:var(--amber-bg);color:var(--amber)}
+.age.r{background:var(--red-bg);color:var(--red)}
+.pac{font-weight:700;font-size:14px}
+.serv{color:var(--teal-d);font-weight:600;font-size:12.5px;margin:1px 0 3px}
+.meta{font-size:12px;color:var(--mut)}
+.foot{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:var(--mut)}
+.foot .late{color:var(--red);font-weight:700}
+.ico{display:inline-flex;align-items:center;gap:3px}
+.ico svg{width:13px;height:13px}
+
+@keyframes mFade{from{opacity:0}to{opacity:1}}
+@keyframes mPop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.modal.saindo{animation:mFadeOut .16s ease forwards}
+.modal.saindo .mbox{animation:mPopOut .16s ease forwards}
+@keyframes mFadeOut{to{opacity:0}}
+@keyframes mPopOut{to{opacity:0;transform:translateY(10px) scale(.98)}}
+/* arrastar */
+.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:box-shadow .15s, transform .15s}
+.card.segurando{transform:scale(.97);box-shadow:0 0 0 2px var(--teal)}
+.card.escondido{display:none}
+.card.pousou{animation:pousou .7s ease}
+@keyframes pousou{0%{box-shadow:0 0 0 3px var(--teal)}100%{box-shadow:var(--sh)}}
+.fantasma{position:fixed;z-index:80;margin:0;pointer-events:none;cursor:grabbing;transition:transform .14s ease, box-shadow .14s ease, left .17s ease, top .17s ease;will-change:left,top,transform}
+.fantasma.no-ar{transform:rotate(3.5deg) scale(1.02);box-shadow:0 18px 38px rgba(0,20,60,.35);transition:transform .14s ease, box-shadow .14s ease}
+.fantasma.pousando{transform:none;box-shadow:var(--sh)}
+.ph{background:rgba(0,32,91,.13);border-radius:var(--r);flex:none;animation:phIn .14s ease}
+@keyframes phIn{from{opacity:0;transform:scaleY(.6)}to{opacity:1;transform:none}}
+.cards:has(.ph) .vazio{display:none}
+body.arrastando,body.arrastando *{cursor:grabbing!important}
+.col.over{outline:2px solid #3b6fd8;outline-offset:-2px;background:#dfe7f4}
+
+/* Modal */
+.modal{animation:mFade .16s ease;position:fixed;inset:0;background:rgba(10,25,38,.55);display:flex;justify-content:center;align-items:flex-start;padding:4vh 12px;z-index:20;overflow-y:auto}
+.mbox{animation:mPop .18s ease;background:#fff;border-radius:14px;width:min(920px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mhead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.mhead h2{margin:0;font-size:19px}
+.mhead .x{margin-left:auto;border:0;background:none;font-size:24px;line-height:1;color:var(--mut)}
+.mbody{display:grid;grid-template-columns:1.35fr 1fr;gap:0}
+.mbody>div{padding:16px 20px}
+.mbody>div+div{border-left:1px solid var(--line);background:#fafcfd}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .full{grid-column:1/-1}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.sec{margin-top:18px}
+.sec h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.movebox{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.com{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.com small{color:var(--mut)}
+.com p{margin:3px 0 0;white-space:pre-wrap}
+.hist{list-style:none;margin:0;padding:0;font-size:12.5px}
+.hist li{padding:6px 0 6px 14px;border-left:2px solid #cfdae3;position:relative}
+.hist li:before{content:"";position:absolute;left:-5px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.chip{display:inline-block;background:#e8f6f5;color:var(--teal-d);font-weight:700;border-radius:6px;padding:2px 8px;font-size:12px}
+
+/* Relatórios */
+#reports{flex:1;overflow-y:auto;padding:16px}
+.rfil{display:flex;gap:10px;flex-wrap:wrap;align-items:end;background:#fff;border-radius:12px;padding:12px 14px;box-shadow:var(--sh)}
+.rfil>div{min-width:150px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.kpi{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--sh)}
+.kpi b{display:block;font-size:26px;line-height:1.1;margin-top:4px}
+.kpi span{font-size:12px;color:var(--mut);font-weight:600}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px}
+.rcard{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:var(--sh)}
+.rcard h4{margin:0 0 4px;font-size:14px}
+.rcard .sub{margin:0 0 10px;font-size:12px;color:var(--mut)}
+.bar{display:grid;grid-template-columns:minmax(120px,42%) 1fr auto;gap:8px;align-items:center;font-size:12.5px;margin:5px 0}
+.bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{background:#eef2f5;border-radius:4px;height:14px;overflow:hidden}
+.bt i{display:block;height:100%;background:var(--teal);border-radius:4px}
+.bar.hot .bt i{background:#d9822b}
+.bv{font-weight:700;min-width:34px;text-align:right}
+.bv em{font-style:normal;font-weight:500;color:var(--mut)}
+.cols{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:10px}
+.cols div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;font-size:11px}
+.cols i{display:block;width:100%;background:var(--navy2);border-radius:4px 4px 0 0;min-height:2px}
+.cols b{font-size:11px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th,.tbl td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+.tbl tr.click{cursor:pointer}
+.tbl tr.click:hover{background:#f3f7fa}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.sec-h h4{margin:0}
+.dados{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0;background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:14px}
+.dados .full{grid-column:1/-1}
+.dados dt{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.dados dd{margin:2px 0 0;font-size:14px}
+.tag-serv{display:inline-block;background:#fdeef5;color:var(--teal-d);font-weight:700;font-size:12.5px;border-radius:6px;padding:2px 8px;margin:2px 4px 2px 0}
+.editando{border:2px solid var(--teal);border-radius:10px;padding:12px;background:#fffafc}
+.aviso-ed{background:#fdeef5;color:var(--teal-d);font-size:12.5px;font-weight:600;border-radius:8px;padding:8px 10px}
+a.btn{color:var(--txt)}
+a.btn.wa{color:#fff}
+@media (max-width:760px){.dados{grid-template-columns:1fr}}
+/* etiquetas */
+.lbls{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 5px}
+.lbl{display:inline-block;color:#fff;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 7px;letter-spacing:.02em;line-height:16px}
+.lbl.off{opacity:.28}
+.lblpick{display:flex;flex-wrap:wrap;gap:6px}
+.lblpick button{border:0;cursor:pointer;font-size:12px;padding:4px 9px}
+.lblrow{display:grid;grid-template-columns:1fr 46px 34px;gap:6px;margin-bottom:6px;align-items:center}
+.lblrow input[type=color]{padding:2px;height:36px}
+.top select{background:var(--navy2);border-color:#2a4f8a;color:#fff;width:auto;padding:7px 8px}
+.tabs{align-items:center}
+.tabs>*{flex:none;white-space:nowrap}
+.tabs .edit{margin-left:auto}
+/* editor de etapas */
+.erow{display:grid;grid-template-columns:28px 1.2fr 1fr 92px 64px 30px;gap:6px;align-items:center;margin-bottom:6px}
+.erow .h{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase}
+.erow .mv{display:flex;flex-direction:column}
+.erow .mv button{border:0;background:none;padding:0;line-height:12px;font-size:12px;color:var(--mut);cursor:pointer}
+.erow .del{border:0;background:none;color:var(--red);font-size:18px;cursor:pointer}
+.erow label.ck{display:flex;gap:5px;align-items:center;font-size:12px;margin:0;color:var(--txt);font-weight:500}
+.erow label.ck input{width:auto}
+details.serv summary{cursor:pointer;font-size:13px;font-weight:600;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+details.serv .lst{max-height:230px;overflow:auto;border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;padding:6px 10px;background:#fff}
+details.serv .lst b{display:block;font-size:11px;color:var(--mut);margin:8px 0 2px;letter-spacing:.05em}
+details.serv label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--txt);font-weight:500;margin:3px 0}
+details.serv label input{width:auto}
+@media (max-width:760px){.erow{grid-template-columns:24px 1fr 1fr 30px}.erow .hide-m{display:none}}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:40}
+.t{background:var(--navy);color:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;max-width:92vw}
+.t.err{background:var(--red)}
+.load{position:fixed;top:0;left:0;height:3px;background:var(--teal);z-index:50;transition:width .3s}
+
+@media (max-width:760px){
+  .mbody{grid-template-columns:1fr}
+  .mbody>div+div{border-left:0;border-top:1px solid var(--line)}
+  .top input{width:100%}
+  .rgrid{grid-template-columns:1fr}
+  .movebox{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div>
+  <img class="login-logo" src="logo-exact.png" alt="Exact Odontologia Digital">
+  <form class="login-box" id="f-login" autocomplete="on">
+    <h1>Quadro de Casos</h1>
+    <p class="muted">Entre com seu nome e PIN da equipe.</p>
+    <div class="f"><label for="l-nome">Nome</label><input id="l-nome" required autocomplete="username"></div>
+    <div class="f"><label for="l-pin">PIN</label><input id="l-pin" type="password" inputmode="numeric" required autocomplete="current-password"></div>
+    <div class="erro" id="l-erro"></div>
+    <button type="button" class="btn pri" id="b-entrar" style="width:100%">Entrar</button>
+  </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <div class="top">
+    <img class="logo" src="logo-exact.png" alt="Exact">
+    <input id="busca" type="search" placeholder="Buscar paciente, dentista, OS…">
+    <select id="f-lbl" title="Filtrar por etiqueta"><option value="">Todas as etiquetas</option></select>
+    <button class="btn on" id="b-quadro">Quadros</button>
+    <button class="btn" id="b-rel">Relatórios</button>
+    <span class="sp"></span>
+    <button class="btn sm" id="b-atual" title="Atualizar">Atualizar</button>
+    <span class="user" id="u-nome"></span>
+    <button class="btn sm" id="b-sair">Sair</button>
+  </div>
+  <div id="demo" hidden>Modo demonstração: dados fictícios, nada é salvo. Cole a URL do Apps Script em <code>API_URL</code> para usar de verdade.</div>
+  <nav class="tabs" id="tabs"></nav>
+  <main id="board"></main>
+  <section id="reports" hidden></section>
+</div>
+
+<div class="modal" id="modal" hidden><div class="mbox" id="mbox"></div></div>
+<div id="toast"></div>
+<div class="load" id="load" style="width:0"></div>
+
+<script>
+/* ===== CONFIGURAÇÃO ===== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // cole aqui a URL do Apps Script implantado (termina em /exec)
+
+/* ===== ESTADO ===== */
+const S = {user:null, quadros:[], casos:[], grupos:[], etiquetas:[], filtroLbl:'', perfil:'', equipe:[], atual:null, busca:'', urlAcomp:'', msgWhats:'', autoWhats:false, view:'quadro', rel:null};
+const DIA = 864e5;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const fmtD = iso => { if(!iso) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){const [y,m,d]=iso.split('-');return `${d}/${m}/${y}`;} return new Date(iso).toLocaleDateString('pt-BR'); };
+const fmtDH = iso => iso ? new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+const dias = iso => iso ? Math.floor((Date.now() - new Date(iso)) / DIA) : 0;
+const hojeISO = () => { const d=new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const IC = {
+  clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.5l-8.5 8.5a5 5 0 01-7-7l9-9a3.3 3.3 0 014.7 4.7l-9 9a1.7 1.7 0 01-2.4-2.4l8.3-8.3"/></svg>',
+  com:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>'
+};
+
+/* ===== API ===== */
+async function api(acao, dados = {}) {
+  if (!API_URL) return demoApi(acao, dados);
+  carregando(true);
+  try {
+    const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao, nome:S.user?.nome, pin:S.user?.pin, ...dados})});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'Erro no servidor');
+    return j;
+  } finally { carregando(false); }
+}
+let nLoad = 0;
+function carregando(on){ nLoad += on?1:-1; const l=$('#load'); l.style.width = nLoad>0 ? '70%' : '100%'; if(nLoad<=0) setTimeout(()=>{ if(nLoad<=0) l.style.width='0'; },300); }
+
+/* ===== SESSÃO ===== */
+function salvarSessao(){ try{ sessionStorage.setItem('exq', JSON.stringify(S.user)); }catch(e){} }
+function lerSessao(){ try{ return JSON.parse(sessionStorage.getItem('exq')||'null'); }catch(e){ return null; } }
+function sair(){ try{ sessionStorage.removeItem('exq'); }catch(e){} location.reload(); }
+
+// sem depender de "submit" de formulário (bloqueado em algumas pré-visualizações)
+$('#f-login').addEventListener('submit', e => { e.preventDefault(); entrar(); });
+$('#b-entrar').addEventListener('click', entrar);
+['#l-nome','#l-pin'].forEach(s => $(s).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); entrar(); } }));
+async function entrar(){
+  S.user = {nome:$('#l-nome').value.trim(), pin:$('#l-pin').value.trim()};
+  $('#l-erro').textContent = '';
+  try { await api('login'); salvarSessao(); await iniciar(); }
+  catch(err){ S.user = null; $('#l-erro').textContent = err.message || 'Não foi possível entrar'; }
+}
+
+async function iniciar(){
+  await carregar();
+  $('#login').hidden = true; $('#app').hidden = false;
+  $('#demo').hidden = !!API_URL;
+  $('#u-nome').textContent = S.user.nome;
+}
+
+async function carregar(){
+  const j = await api('listar');
+  Object.assign(S, {quadros:j.quadros, casos:j.casos, grupos:j.grupos||[], etiquetas:j.etiquetas||[], equipe:j.equipe||[], urlAcomp:j.urlAcomp||'', msgWhats:j.msgWhats||'', autoWhats:!!j.autoWhats, perfil:(j.usuario?.perfil||'').toLowerCase()});
+  renderFiltroLbl();
+  if (!S.quadros.some(q => q.nome === S.atual)) S.atual = (S.quadros[0]||{}).nome;
+  render();
+}
+
+/* ===== AUXILIARES DE CASO ===== */
+const quadro = nome => S.quadros.find(q => q.nome === nome);
+const colInfo = c => (quadro(c.quadro)?.colunas || []).find(x => x.nome === c.coluna);
+const ehUltima = c => { const q = quadro(c.quadro); return q && q.colunas.length && q.colunas[q.colunas.length-1].nome === c.coluna; };
+const etapaPub = c => colInfo(c)?.publico || c.coluna;
+const posDe = c => Number(c.posicao) || Date.parse(c.colunaDesde || c.criadoEm) || 0;
+const lblsDe = c => String(c.etiquetas||'').split('|').filter(Boolean);
+const corLbl = n => (S.etiquetas.find(e => e.nome === n) || {}).cor || '#5f7282';
+const lblHTML = (n, off) => `<span class="lbl ${off?'off':''}" style="background:${esc(corLbl(n))}">${esc(n)}</span>`;
+const servicosDe = c => String(c.servico||'').split(';').map(x=>x.trim()).filter(Boolean);
+function renderFiltroLbl(){ const sel = $('#f-lbl'); sel.innerHTML = '<option value="">Todas as etiquetas</option>' + S.etiquetas.map(e=>`<option ${e.nome===S.filtroLbl?'selected':''}>${esc(e.nome)}</option>`).join(''); }
+const bate = c => (!S.filtroLbl || lblsDe(c).includes(S.filtroLbl)) && (!S.busca || norm([c.id,c.paciente,c.dentista,c.servico,c.clinica,c.dentes,c.responsavel,c.etiquetas,c.origem].join(' ')).includes(norm(S.busca)));
+function linkAcomp(c){ return S.urlAcomp ? `${S.urlAcomp}${S.urlAcomp.includes('?')?'&':'?'}os=${encodeURIComponent(c.id)}&k=${c.token}` : ''; }
+function linkWhats(c, etapa){
+  const mapa = {dentista:c.dentista, paciente:c.paciente, servico:c.servico, etapa:etapa||etapaPub(c), link:linkAcomp(c), os:c.id};
+  const msg = (S.msgWhats || 'Atualização do caso {os} ({paciente}): {etapa}. {link}').replace(/\{(\w+)\}/g,(m,k)=> k in mapa ? mapa[k] : m);
+  let f = String(c.dentistaWhats||'').replace(/\D/g,''); if (f && f.length <= 11) f = '55' + f;
+  return `https://wa.me/${f}?text=${encodeURIComponent(msg)}`;
+}
+
+/* ===== RENDER ===== */
+function render(){
+  renderTabs();
+  $('#board').hidden = S.view !== 'quadro'; $('#reports').hidden = S.view !== 'rel'; $('#tabs').hidden = S.view !== 'quadro';
+  $('#b-quadro').classList.toggle('on', S.view==='quadro'); $('#b-rel').classList.toggle('on', S.view==='rel');
+  if (S.view === 'quadro') renderBoard(); else renderRel();
+}
+
+function renderTabs(){
+  $('#tabs').innerHTML = S.quadros.map(q => {
+    const todos = S.casos.filter(c => c.quadro === q.nome);
+    const n = (S.busca || S.filtroLbl) ? todos.filter(bate).length : todos.length;
+    return `<button class="tab ${q.nome===S.atual?'on':''} ${(S.busca||S.filtroLbl)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
+  }).join('') + (S.perfil==='admin' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
+}
+
+function cardHTML(c){
+  const d = dias(c.colunaDesde), cls = d>=7?'r':d>=3?'a':'';
+  const atrasado = c.prazo && c.prazo < hojeISO() && !ehUltima(c);
+  return `<article class="card ${cls}" data-id="${esc(c.id)}">
+    <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${cls}" title="Dias nesta coluna">${d===0?'hoje':d+'d'}</span></div>
+    ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
+    <div class="pac">${esc(c.paciente)}</div>
+    <div class="serv">${esc(servicosDe(c).join(' · '))}</div>
+    <div class="meta">Dr(a). ${esc(c.dentista)}${c.dentes?` · ${esc(c.dentes)}`:''}</div>
+    <div class="foot">
+      ${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)}</span>`:''}
+      ${Number(c.comentarios)?`<span class="ico">${IC.com}${esc(c.comentarios)}</span>`:''}
+      ${c.prazo?`<span class="ico ${atrasado?'late':''}">${IC.cal}${fmtD(c.prazo)}</span>`:''}
+      ${c.responsavel?`<span class="ico">${IC.user}${esc(c.responsavel)}</span>`:''}
+    </div></article>`;
+}
+
+function renderBoard(){
+  const q = quadro(S.atual);
+  if (!q) { $('#board').innerHTML = '<p class="muted">Nenhum quadro configurado.</p>'; return; }
+  $('#board').innerHTML = q.colunas.map(col => {
+    const cs = S.casos.filter(c => c.quadro===q.nome && c.coluna===col.nome && bate(c)).sort((a,b)=> posDe(a) - posDe(b));
+    return `<section class="col" data-col="${esc(col.nome)}">
+      <header><h3>${esc(col.nome)}</h3>${col.avisar?'<span class="wa-tag" title="Ao entrar aqui, avisa o dentista">WhatsApp</span>':''}<span class="n">${cs.length}</span></header>
+      <div class="cards">${cs.map(cardHTML).join('') || '<div class="vazio">vazio</div>'}</div></section>`;
+  }).join('');
+}
+
+/* ===== EVENTOS DO QUADRO ===== */
+$('#tabs').addEventListener('click', e => {
+  if (e.target.id === 'b-etapas') return editarQuadro(S.atual);
+  if (e.target.id === 'b-novoq') return editarQuadro('');
+  const t = e.target.closest('.tab'); if (t){ S.atual = t.dataset.q; render(); }
+});
+$('#f-lbl').onchange = e => { S.filtroLbl = e.target.value; render(); };
+$('#busca').addEventListener('input', e => { S.busca = e.target.value; if (S.view==='quadro') render(); });
+$('#b-quadro').onclick = () => { S.view='quadro'; render(); };
+$('#b-rel').onclick = async () => { S.view='rel'; render(); await carregarRel(); };
+$('#b-atual').onclick = async () => { try{ await carregar(); if(S.view==='rel') await carregarRel(); toast('Atualizado'); }catch(e){ toast(e.message,true); } };
+$('#b-sair').onclick = sair;
+
+const board = $('#board');
+/* ===== ARRASTAR CARTÕES (estilo Trello · mouse e toque) ===== */
+const DR = {st:null, semClique:false, x:0, y:0, loop:null};
+board.addEventListener('pointerdown', e => {
+  const card = e.target.closest('.card');
+  if (!card || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const r = card.getBoundingClientRect();
+  DR.st = {card, id:card.dataset.id, x0:e.clientX, y0:e.clientY, dx:e.clientX - r.left, dy:e.clientY - r.top, w:r.width, h:r.height, ativo:false, touch:e.pointerType !== 'mouse'};
+  DR.x = e.clientX; DR.y = e.clientY;
+  if (DR.st.touch) { card.classList.add('segurando'); DR.st.timer = setTimeout(() => { if (DR.st && !DR.st.ativo) { navigator.vibrate?.(15); iniciarArraste(); } }, 300); }
+});
+window.addEventListener('pointermove', e => {
+  const st = DR.st; if (!st) return;
+  DR.x = e.clientX; DR.y = e.clientY;
+  if (!st.ativo) {
+    const dist = Math.hypot(e.clientX - st.x0, e.clientY - st.y0);
+    if (st.touch) { if (dist > 10) { clearTimeout(st.timer); st.card.classList.remove('segurando'); DR.st = null; } return; } // é rolagem
+    if (dist < 5) return;
+    iniciarArraste();
+  }
+  e.preventDefault();
+  posicionar();
+}, {passive:false});
+window.addEventListener('pointerup', () => soltar());
+window.addEventListener('pointercancel', () => { if (DR.st && !DR.st.ativo) { clearTimeout(DR.st.timer); DR.st.card.classList.remove('segurando'); DR.st = null; } });
+document.addEventListener('touchmove', e => { if (DR.st?.ativo) e.preventDefault(); }, {passive:false});
+document.addEventListener('contextmenu', e => { if (DR.st) e.preventDefault(); });
+board.addEventListener('click', e => {
+  if (DR.semClique) { DR.semClique = false; return; }
+  const c = e.target.closest('.card'); if (c) abrirCaso(c.dataset.id);
+});
+
+function iniciarArraste(){
+  const st = DR.st; st.ativo = true; clearTimeout(st.timer);
+  const g = st.card.cloneNode(true);
+  g.classList.add('fantasma'); g.classList.remove('segurando');
+  g.style.width = st.w + 'px';
+  document.body.appendChild(g); st.g = g;
+  const ph = document.createElement('div'); ph.className = 'ph'; ph.style.height = st.h + 'px';
+  st.card.before(ph); st.ph = ph;
+  st.card.classList.add('escondido'); st.card.classList.remove('segurando');
+  document.body.classList.add('arrastando');
+  requestAnimationFrame(() => g.classList.add('no-ar'));
+  posicionar();
+  DR.loop = setInterval(autoRolar, 16);
+}
+
+function posicionar(){
+  const st = DR.st; if (!st?.ativo) return;
+  st.g.style.left = (DR.x - st.dx) + 'px'; st.g.style.top = (DR.y - st.dy) + 'px';
+  const el = document.elementFromPoint(DR.x, DR.y);
+  const col = el?.closest('.col');
+  document.querySelectorAll('.col.over').forEach(c => c !== col && c.classList.remove('over'));
+  if (!col) return;
+  col.classList.add('over');
+  const lista = col.querySelector('.cards');
+  const cards = [...lista.querySelectorAll('.card:not(.escondido)')];
+  const antes = cards.find(c => { const r = c.getBoundingClientRect(); return DR.y < r.top + r.height / 2; });
+  let prox = st.ph.nextElementSibling; while (prox && !prox.matches('.card:not(.escondido)')) prox = prox.nextElementSibling;
+  if (st.ph.parentElement === lista && (prox || null) === (antes || null)) return;   // já está no lugar
+  const animar = deslizar(lista);
+  if (antes) lista.insertBefore(st.ph, antes); else lista.appendChild(st.ph);
+  animar();
+}
+
+// anima os outros cartões abrindo espaço (técnica FLIP)
+function deslizar(lista){
+  const cards = [...document.querySelectorAll('.cards .card:not(.escondido)')];
+  const antes = new Map(cards.map(c => [c, c.getBoundingClientRect().top]));
+  return () => cards.forEach(c => {
+    const d = antes.get(c) - c.getBoundingClientRect().top; if (!d) return;
+    c.style.transition = 'none'; c.style.transform = `translateY(${d}px)`;
+    requestAnimationFrame(() => { c.style.transition = 'transform .16s ease'; c.style.transform = ''; });
+  });
+}
+
+function autoRolar(){
+  const b = $('#board'), r = b.getBoundingClientRect(), m = 70;
+  if (DR.x > r.right - m) b.scrollLeft += 12; else if (DR.x < r.left + m) b.scrollLeft -= 12;
+  const el = document.elementFromPoint(DR.x, DR.y)?.closest('.col')?.querySelector('.cards');
+  if (el) { const rc = el.getBoundingClientRect(); if (DR.y > rc.bottom - 40) el.scrollTop += 10; else if (DR.y < rc.top + 40) el.scrollTop -= 10; }
+  if (DR.st?.ativo) posicionar();
+}
+
+function soltar(){
+  const st = DR.st; if (!st) return;
+  clearTimeout(st.timer); st.card.classList.remove('segurando');
+  if (!st.ativo) { DR.st = null; return; }
+  clearInterval(DR.loop); DR.semClique = true; setTimeout(() => DR.semClique = false, 50);
+  const col = st.ph.closest('.col');
+  document.querySelectorAll('.col.over').forEach(c => c.classList.remove('over'));
+  // posição entre os vizinhos
+  const vizinho = (el, dir) => { let n = el[dir]; while (n && !(n.matches('.card') && !n.classList.contains('escondido'))) n = n[dir]; return n; };
+  const ant = vizinho(st.ph, 'previousElementSibling'), prox = vizinho(st.ph, 'nextElementSibling');
+  const pa = ant ? posDe(S.casos.find(c => c.id === ant.dataset.id)) : null;
+  const pp = prox ? posDe(S.casos.find(c => c.id === prox.dataset.id)) : null;
+  const pos = pa !== null && pp !== null ? (pa + pp) / 2 : pa !== null ? pa + 1000 : pp !== null ? pp - 1000 : Date.now();
+  // pousa o cartão no espaço reservado
+  const r = st.ph.getBoundingClientRect();
+  st.g.classList.remove('no-ar'); st.g.classList.add('pousando');
+  st.g.style.left = r.left + 'px'; st.g.style.top = r.top + 'px';
+  setTimeout(() => {
+    st.g.remove(); document.body.classList.remove('arrastando');
+    DR.st = null;
+    if (col) mover(st.id, S.atual, col.dataset.col, pos).then(() => piscar(st.id));
+    else { st.ph.remove(); st.card.classList.remove('escondido'); }
+  }, 170);
+}
+
+function piscar(id){ const el = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`); if (el){ el.classList.add('pousou'); setTimeout(() => el.classList.remove('pousou'), 700); } }
+
+async function mover(id, q, col, pos){
+  const c = S.casos.find(x => x.id === id);
+  if (!c) return false;
+  const mesma = c.quadro===q && c.coluna===col;
+  if (mesma && (pos === undefined || pos === posDe(c))) { render(); return false; }
+  const ant = {quadro:c.quadro, coluna:c.coluna, colunaDesde:c.colunaDesde, posicao:c.posicao};
+  const novo = {quadro:q, coluna:col, posicao:String(pos ?? Date.now())};
+  if (!mesma) novo.colunaDesde = new Date().toISOString();
+  Object.assign(c, novo); render();
+  try {
+    const r = await api('mover', {id, quadro:q, coluna:col, posicao:novo.posicao});
+    Object.assign(c, r.caso); render();
+    if (mesma) return true;
+    if (r.avisar && r.enviadoAuto) toast(`${c.dentista} foi avisado(a) no WhatsApp`);
+    else if (r.avisar && c.dentistaWhats) toast(`Avisar Dr(a). ${c.dentista}: "${r.etapa}"?`, false, 'Abrir WhatsApp', () => window.open(linkWhats(c, r.etapa), '_blank'));
+    else toast(`Movido para ${col}`);
+    return true;
+  } catch(e){ Object.assign(c, ant); render(); toast('Não foi possível mover: '+e.message, true); return false; }
+}
+
+/* ===== MODAL DO CASO ===== */
+function campo(k, rot, v, tipo='text', full=false){
+  if (tipo==='area') return `<div class="${full?'full':''}"><label>${rot}</label><textarea data-k="${k}" rows="4">${esc(v)}</textarea></div>`;
+  return `<div class="${full?'full':''}"><label>${rot}</label><input data-k="${k}" type="${tipo}" value="${esc(v)}"></div>`;
+}
+function opcoes(lista, atual){ const l = [...lista]; if (atual && !l.includes(atual)) l.unshift(atual); return l.map(x=>`<option ${x===atual?'selected':''}>${esc(x)}</option>`).join(''); }
+
+function abrirCaso(id){
+  const c = S.casos.find(x => x.id === id); if (!c) return;
+  const link = linkAcomp(c);
+  $('#mbox').innerHTML = `
+  <div class="mhead"><div>
+      <div class="os">${esc(c.id)} · entrou em ${fmtDH(c.criadoEm)}</div>
+      <h2>${esc(c.paciente)}</h2>
+      <div style="margin-top:6px"><span class="chip">${esc(c.quadro)} › ${esc(c.coluna)}</span> <span class="muted" style="font-size:12px">há ${dias(c.colunaDesde)} dia(s) nesta coluna</span></div>
+    </div><button class="x" data-fechar aria-label="Fechar">×</button></div>
+  <div class="mbody">
+    <div>
+      <div class="grid2">
+        <div class="full"><label>Etiquetas</label><div class="lblpick" id="m-lbls"></div>
+          <div style="margin-top:6px"><button type="button" class="btn sm" id="m-glbl">Gerenciar etiquetas</button></div>
+          <div id="m-lbled" hidden style="margin-top:8px"></div></div>
+        <div class="full"><label>Responsável</label><select id="m-resp"><option value="">—</option>${opcoes(S.equipe, c.responsavel)}</select></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h4>Solicitação do dentista</h4><button type="button" class="btn sm" id="m-editar">Editar solicitação</button></div>
+        <div id="m-ver">${verSolicitacao(c)}</div>
+        <div id="m-campos" class="grid2 editando" hidden>
+          <div class="full aviso-ed">Você está editando a solicitação. A alteração fica registrada no histórico de comentários com o seu nome.</div>
+          ${campo('paciente','Paciente',c.paciente,'text',true)}
+          <div class="full"><label>Serviços</label>${servPicker(servicosDe(c))}</div>
+          ${campo('dentista','Dentista',c.dentista)}
+          ${campo('dentistaWhats','WhatsApp do dentista',c.dentistaWhats,'tel')}
+          ${campo('dentistaEmail','E-mail',c.dentistaEmail,'email')}
+          <div><label>Origem</label><select data-k="origem"><option value="">—</option>${opcoes(['Consultório Particular','Escola de Pós-Graduação'], c.origem)}</select></div>
+          ${campo('clinica','Escola / clínica',c.clinica)}
+          ${campo('dataSolicitacao','Data da solicitação',c.dataSolicitacao,'date')}
+          ${campo('dentes','Dentes',c.dentes)}
+          ${campo('cor','Cor do trabalho',c.cor)}
+          ${campo('material','Material restaurador',c.material)}
+          ${campo('componente','Componente protético / scanbody',c.componente)}
+          ${campo('prazo','Prazo',c.prazo,'date')}
+          ${campo('observacoes','Observações sobre o trabalho',c.observacoes,'area',true)}
+          <div class="full" style="display:flex;gap:8px"><button class="btn pri" id="m-salvar">Salvar alterações</button><button class="btn" id="m-cancelar">Cancelar</button></div>
+        </div>
+      </div>
+      <div class="acts">
+        ${c.pastaUrl?`<a class="btn" href="${esc(c.pastaUrl)}" target="_blank" rel="noopener">Pasta no Drive (${Number(c.anexos)||0})</a>`:''}
+        ${c.dentistaWhats?`<a class="btn wa" href="${esc(linkWhats(c))}" target="_blank" rel="noopener">Avisar dentista</a>`:''}
+        ${link?`<button class="btn" id="m-copiar">Copiar link do dentista</button>`:''}
+        <button class="btn danger" id="m-arq">Arquivar</button>
+      </div>
+      <div class="sec"><h4>Mover caso</h4>
+        <div class="movebox">
+          <div><label>Quadro</label><select id="m-q">${S.quadros.map(q=>`<option ${q.nome===c.quadro?'selected':''}>${esc(q.nome)}</option>`).join('')}</select></div>
+          <div><label>Coluna</label><select id="m-c"></select></div>
+          <button class="btn pri" id="m-mover">Mover</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec" style="margin-top:0"><h4>Comentários</h4>
+        <textarea id="m-txt" rows="2" placeholder="Escreva um comentário…"></textarea>
+        <div style="text-align:right;margin:6px 0 10px"><button class="btn sm pri" id="m-com">Comentar</button></div>
+        <div id="m-coms"><p class="muted">Carregando…</p></div>
+      </div>
+      <div class="sec"><h4>Histórico</h4><ul class="hist" id="m-hist"></ul></div>
+    </div>
+  </div>`;
+  $('#modal').hidden = false;
+
+  const encherCols = () => { const q = quadro($('#m-q').value); $('#m-c').innerHTML = (q?.colunas||[]).map(x=>`<option ${x.nome===c.coluna&&q.nome===c.quadro?'selected':''}>${esc(x.nome)}</option>`).join(''); };
+  $('#m-q').onchange = encherCols; encherCols();
+  let selLbls = lblsDe(c);
+  const pintarLbls = () => {
+    $('#m-lbls').innerHTML = S.etiquetas.length ? S.etiquetas.map(e => `<button type="button" class="lbl ${selLbls.includes(e.nome)?'':'off'}" data-l="${esc(e.nome)}" style="background:${esc(e.cor)}">${esc(e.nome)}</button>`).join('') : '<span class="muted">Nenhuma etiqueta criada.</span>';
+  };
+  pintarLbls();
+  $('#m-lbls').onclick = async e => {
+    const b = e.target.closest('[data-l]'); if (!b) return;
+    const n = b.dataset.l; selLbls = selLbls.includes(n) ? selLbls.filter(x=>x!==n) : [...selLbls, n]; pintarLbls();
+    try { const r = await api('editar', {id:c.id, dados:{etiquetas:selLbls.join('|')}}); c.etiquetas = r.caso.etiquetas; render(); }
+    catch(err){ toast(err.message, true); }
+  };
+  $('#m-glbl').onclick = () => editorEtiquetas($('#m-lbled'), () => { selLbls = lblsDe(c); pintarLbls(); });
+  $('#m-mover').onclick = async () => { if (await mover(c.id, $('#m-q').value, $('#m-c').value)) fecharModal(); };
+  const modoEdicao = on => {
+    $('#m-ver').hidden = on; $('#m-campos').hidden = !on; $('#m-editar').hidden = on;
+    if (on) $('#m-campos').scrollIntoView({behavior:'smooth', block:'start'});
+  };
+  $('#m-editar').onclick = () => modoEdicao(true);
+  $('#m-cancelar').onclick = () => {           // descarta o que foi digitado
+    const box = $('#m-campos');
+    box.querySelectorAll('[data-k]').forEach(el => { el.value = c[el.dataset.k] ?? ''; });
+    box.querySelectorAll('[data-serv]').forEach(el => { el.checked = servicosDe(c).includes(el.value); });
+    modoEdicao(false);
+  };
+  $('#m-resp').onchange = async e => {
+    try { const r = await api('editar', {id:c.id, dados:{responsavel:e.target.value}}); c.responsavel = r.caso.responsavel; render(); toast('Responsável atualizado'); }
+    catch(err){ toast(err.message, true); }
+  };
+  $('#m-salvar').onclick = async () => {
+    const dados = {}; document.querySelectorAll('#m-campos [data-k]').forEach(el => dados[el.dataset.k] = el.value);
+    dados.servico = [...document.querySelectorAll('#m-campos [data-serv]:checked')].map(x=>x.value).join('; ');
+    if (!dados.paciente.trim()) return toast('O nome do paciente não pode ficar vazio', true);
+    if (!dados.servico) return toast('Marque pelo menos um serviço', true);
+    try {
+      const r = await api('editar', {id:c.id, dados});
+      Object.assign(c, r.caso); if (API_URL && r.mudancas) c.comentarios = (Number(c.comentarios)||0)+1; render();
+      $('#m-ver').innerHTML = verSolicitacao(c); modoEdicao(false);
+      toast(r.mudancas ? 'Solicitação atualizada' : 'Nada foi alterado'); detalhe(c);
+    } catch(e){ toast(e.message, true); }
+  };
+  if (link) $('#m-copiar').onclick = async () => { try{ await navigator.clipboard.writeText(link); toast('Link copiado'); }catch(e){ prompt('Copie o link:', link); } };
+  $('#m-arq').onclick = async e => {
+    const b = e.currentTarget;
+    if (!b.classList.contains('confirm')) { b.classList.add('confirm'); b.textContent = 'Confirmar arquivamento'; return; }
+    try { await api('arquivar', {id:c.id}); S.casos = S.casos.filter(x => x.id !== c.id); render(); fecharModal(); toast('Caso arquivado'); }
+    catch(err){ toast(err.message, true); }
+  };
+  $('#m-com').onclick = async () => {
+    const texto = $('#m-txt').value.trim(); if (!texto) return;
+    try { await api('comentar', {id:c.id, texto}); c.comentarios = (Number(c.comentarios)||0)+1; $('#m-txt').value=''; render(); detalhe(c); }
+    catch(e){ toast(e.message, true); }
+  };
+  detalhe(c);
+}
+
+function verSolicitacao(c){
+  const linha = (rot, v, full) => `<div class="${full?'full':''}"><dt>${rot}</dt><dd>${v ? v : '<span class="muted">—</span>'}</dd></div>`;
+  const wa = c.dentistaWhats ? esc(c.dentistaWhats.replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3')) : '';
+  return `<dl class="dados">
+    ${linha('Paciente', `<b>${esc(c.paciente)}</b>`, true)}
+    ${linha('Serviços', servicosDe(c).map(x=>`<span class="tag-serv">${esc(x)}</span>`).join(''), true)}
+    ${linha('Dentes', esc(c.dentes))}
+    ${linha('Data da solicitação', fmtD(c.dataSolicitacao))}
+    ${linha('Dentista', esc(c.dentista))}
+    ${linha('WhatsApp', wa)}
+    ${linha('E-mail', esc(c.dentistaEmail))}
+    ${linha('Origem', esc([c.origem, c.clinica].filter(Boolean).join(' · ')))}
+    ${linha('Cor do trabalho', esc(c.cor))}
+    ${linha('Material restaurador', esc(c.material))}
+    ${linha('Componente / scanbody', esc(c.componente))}
+    ${linha('Prazo', fmtD(c.prazo))}
+    ${linha('Observações', c.observacoes ? `<span style="white-space:pre-wrap">${esc(c.observacoes)}</span>` : '', true)}
+  </dl>`;
+}
+
+function servPicker(sel){
+  const todos = new Set(S.grupos.flatMap(g => g.itens.map(i => i.servico)));
+  const extras = sel.filter(x => !todos.has(x));
+  const grupos = extras.length ? [...S.grupos, {grupo:'Outros', itens:extras.map(x=>({servico:x}))}] : S.grupos;
+  return `<details class="serv"><summary>${sel.length ? esc(sel.join(' · ')) : 'Nenhum serviço marcado'}</summary><div class="lst">
+    ${grupos.map(g => `<b>${esc(g.grupo)}</b>${g.itens.map(i => `<label><input type="checkbox" data-serv value="${esc(i.servico)}" ${sel.includes(i.servico)?'checked':''}>${esc(i.servico)}</label>`).join('')}`).join('')}
+  </div></details>`;
+}
+
+function editorEtiquetas(box, depois){
+  if (!box.hidden) { box.hidden = true; return; }
+  let lista = S.etiquetas.map(e => ({nome:e.nome, cor:e.cor, antigo:e.nome}));
+  const pintar = () => {
+    box.innerHTML = lista.map((e,i) => `<div class="lblrow"><input data-i="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="NOME"><input type="color" data-i="${i}" data-f="cor" value="${esc(e.cor)}"><button type="button" class="btn sm danger" data-rm="${i}" title="Excluir">×</button></div>`).join('')
+      + `<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-add>+ Nova etiqueta</button><button type="button" class="btn sm pri" data-ok>Salvar etiquetas</button></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Renomear ou excluir aqui vale para todos os cartões.</p>`;
+  };
+  box.oninput = e => { const el = e.target.closest('[data-i]'); if (el) lista[+el.dataset.i][el.dataset.f] = el.value; };
+  box.onclick = async e => {
+    if (e.target.closest('[data-add]')) { lista.push({nome:'', cor:'#1f6feb', antigo:''}); pintar(); box.querySelector('.lblrow:last-of-type input')?.focus(); }
+    const rm = e.target.closest('[data-rm]'); if (rm) { lista.splice(+rm.dataset.rm, 1); pintar(); }
+    if (e.target.closest('[data-ok]')) {
+      try {
+        const r = await api('etiquetas', {lista});
+        const ren = {}; lista.forEach(x => { if (x.antigo && x.antigo !== x.nome.toUpperCase()) ren[x.antigo] = x.nome.toUpperCase(); });
+        S.etiquetas = r.etiquetas; const ok = new Set(S.etiquetas.map(x=>x.nome));
+        S.casos.forEach(c => { c.etiquetas = lblsDe(c).map(n => ren[n]||n).filter(n => ok.has(n)).join('|'); });
+        renderFiltroLbl(); render(); box.hidden = true; depois && depois(); toast('Etiquetas salvas');
+      } catch(err){ toast(err.message, true); }
+    }
+  };
+  pintar(); box.hidden = false;
+}
+
+function editarQuadro(nome){
+  const q = quadro(nome);
+  let cols = q ? q.colunas.map(c => ({antigo:c.nome, nome:c.nome, publico:c.publico, avisar:c.avisar})) : [{antigo:'',nome:'Ordem de serviço',publico:'Ordem de serviço aberta',avisar:false},{antigo:'',nome:'Em produção',publico:'Em produção',avisar:true},{antigo:'',nome:'Entregue',publico:'Entregue',avisar:true}];
+  const qtd = col => S.casos.filter(c => c.quadro===nome && c.coluna===col).length;
+  $('#mbox').innerHTML = `
+    <div class="mhead"><div><div class="os">${q ? 'Editar etapas' : 'Novo quadro'}</div><h2>${q ? esc(nome) : 'Criar quadro'}</h2></div><button class="x" data-fechar aria-label="Fechar">×</button></div>
+    <div style="padding:16px 20px">
+      <div style="max-width:420px;margin-bottom:14px"><label>Nome do quadro</label><input id="e-nome" value="${esc(nome)}"></div>
+      <div id="e-cols"></div>
+      <button class="btn sm" id="e-add">+ Adicionar coluna</button>
+      <p class="muted" style="font-size:12.5px">"Nome para o dentista" é o que aparece na página de acompanhamento. Marque <b>WhatsApp</b> nas etapas em que o dentista deve ser avisado. Só dá para excluir coluna vazia; renomear mantém os cartões e o histórico.</p>
+      <div class="acts"><button class="btn pri" id="e-salvar">Salvar</button><button class="btn" data-fechar>Cancelar</button></div>
+    </div>`;
+  const pintar = () => {
+    $('#e-cols').innerHTML = `<div class="erow"><span></span><span class="h">Coluna (equipe)</span><span class="h">Nome para o dentista</span><span class="h hide-m">Avisar</span><span class="h hide-m">Cartões</span><span></span></div>` +
+      cols.map((c,i) => `<div class="erow" data-i="${i}">
+        <span class="mv"><button data-up="${i}" title="Subir">▲</button><button data-down="${i}" title="Descer">▼</button></span>
+        <input data-f="nome" value="${esc(c.nome)}" placeholder="Nome da coluna">
+        <input data-f="publico" value="${esc(c.publico)}" placeholder="Igual ao nome">
+        <label class="ck hide-m"><input type="checkbox" data-f="avisar" ${c.avisar?'checked':''}> WhatsApp</label>
+        <span class="muted hide-m" style="font-size:12px">${c.antigo ? qtd(c.antigo) : 'nova'}</span>
+        <button class="del" data-del="${i}" title="Excluir coluna">×</button></div>`).join('');
+  };
+  pintar();
+  $('#e-cols').oninput = e => { const row = e.target.closest('[data-i]'), f = e.target.dataset.f; if (!row || !f) return; cols[+row.dataset.i][f] = e.target.type==='checkbox' ? e.target.checked : e.target.value; };
+  $('#e-cols').onchange = $('#e-cols').oninput;
+  $('#e-cols').onclick = e => {
+    const up = e.target.dataset.up, dn = e.target.dataset.down, del = e.target.dataset.del;
+    if (up !== undefined && +up > 0) { [cols[+up-1], cols[+up]] = [cols[+up], cols[+up-1]]; pintar(); }
+    if (dn !== undefined && +dn < cols.length-1) { [cols[+dn+1], cols[+dn]] = [cols[+dn], cols[+dn+1]]; pintar(); }
+    if (del !== undefined) { const c = cols[+del]; if (c.antigo && qtd(c.antigo)) return toast(`"${c.antigo}" tem ${qtd(c.antigo)} cartão(ões). Mova antes de excluir.`, true); cols.splice(+del, 1); pintar(); }
+  };
+  $('#e-add').onclick = () => { cols.push({antigo:'', nome:'', publico:'', avisar:false}); pintar(); $('#e-cols .erow:last-child input')?.focus(); };
+  $('#e-salvar').onclick = async () => {
+    try {
+      const r = await api('salvarQuadro', {quadro:nome, novoNome:$('#e-nome').value.trim(), colunas:cols});
+      S.atual = r.quadro; await carregar(); fecharModal(); toast('Quadro salvo');
+    } catch(err){ toast(err.message, true); }
+  };
+  $('#modal').hidden = false;
+}
+
+async function detalhe(c){
+  try {
+    const r = await api('detalhe', {id:c.id});
+    const coms = r.comentarios.sort((a,b)=> a.quando < b.quando ? 1 : -1);
+    $('#m-coms').innerHTML = coms.length ? coms.map(x=>`<div class="com"><small><b>${esc(x.usuario)}</b> · ${fmtDH(x.quando)}</small><p>${esc(x.texto)}</p></div>`).join('') : '<p class="muted">Sem comentários.</p>';
+    const h = r.historico.sort((a,b)=> a.quando < b.quando ? 1 : -1);
+    $('#m-hist').innerHTML = h.map(x => {
+      const t = Number(x.segundosNaAnterior) ? ` <span class="muted">(${(x.segundosNaAnterior/86400).toFixed(1).replace('.',',')} dia(s) em ${esc(x.deColuna)})</span>` : '';
+      const de = x.deColuna ? `${esc(x.deColuna)} → ` : 'Criado em ';
+      const mudouQ = x.deQuadro && x.deQuadro !== x.paraQuadro ? ` <b>[${esc(x.paraQuadro)}]</b>` : '';
+      return `<li><small class="muted">${fmtDH(x.quando)} · ${esc(x.usuario)}</small><br>${de}<b>${esc(x.paraColuna)}</b>${mudouQ}${t}</li>`;
+    }).join('');
+  } catch(e){ $('#m-coms').innerHTML = `<p class="erro">${esc(e.message)}</p>`; }
+}
+
+function fecharModal(){
+  const m = $('#modal'); if (m.hidden) return;
+  m.classList.add('saindo');
+  setTimeout(() => { m.hidden = true; m.classList.remove('saindo'); $('#mbox').innerHTML = ''; }, 160);
+}
+$('#modal').addEventListener('click', e => { if (e.target.id==='modal' || e.target.closest('[data-fechar]')) fecharModal(); });
+document.addEventListener('keydown', e => { if (e.key==='Escape' && !$('#modal').hidden) fecharModal(); });
+
+/* ===== RELATÓRIOS ===== */
+const RF = {de:'', ate:'', quadro:'', servico:''};
+async function carregarRel(){
+  $('#reports').innerHTML = '<p class="muted">Carregando relatórios…</p>';
+  try { S.rel = await api('relatorio'); renderRel(); }
+  catch(e){ $('#reports').innerHTML = `<p class="erro">${esc(e.message)}</p>`; }
+}
+
+function renderRel(){
+  if (!S.rel) return;
+  if (!RF.de){ const d = new Date(); RF.de = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; RF.ate = hojeISO(); }
+  const R = S.rel, qs = R.quadros;
+  const ult = {}; qs.forEach(q => ult[q.nome] = q.colunas.length ? q.colunas[q.colunas.length-1].nome : '');
+  const dia = iso => (iso||'').slice(0,10);
+  const noPer = iso => { const x = new Date(iso); const d = new Date(x - x.getTimezoneOffset()*6e4).toISOString().slice(0,10); return d >= RF.de && d <= RF.ate; };
+  const filtroBase = c => (!RF.quadro || c.quadro===RF.quadro) && (!RF.servico || servicosDe(c).includes(RF.servico));
+  const todos = R.casos.filter(filtroBase);
+  const per = todos.filter(c => noPer(c.criadoEm));
+  const conclu = c => c.coluna === ult[c.quadro];
+  const porCaso = {}; R.historico.forEach(h => (porCaso[h.casoId] ||= []).push(h));
+
+  // tempo até a conclusão (entrada no último quadro/coluna)
+  const tempos = per.filter(conclu).map(c => {
+    const h = (porCaso[c.id]||[]).filter(x => x.paraQuadro===c.quadro && x.paraColuna===c.coluna).sort((a,b)=>a.quando<b.quando?-1:1)[0];
+    return h ? (new Date(h.quando) - new Date(c.criadoEm)) / DIA : null;
+  }).filter(x => x !== null);
+  const media = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0;
+  const parados = R.casos.filter(c => c.status==='ativo' && !conclu(c) && filtroBase(c) && dias(c.colunaDesde) >= 7).sort((a,b)=>a.colunaDesde<b.colunaDesde?-1:1);
+  const atrasados = R.casos.filter(c => c.status==='ativo' && !conclu(c) && filtroBase(c) && c.prazo && c.prazo < hojeISO());
+
+  const contar = (lista, f) => { const m = {}; lista.forEach(x => { let ks = f(x); if (!Array.isArray(ks)) ks = [ks]; if (!ks.length) ks = ['']; ks.forEach(k => { k = k || '(sem informação)'; m[k] = (m[k]||0)+1; }); }); return Object.entries(m).sort((a,b)=>b[1]-a[1]); };
+  if (R.etiquetas) S.etiquetas = R.etiquetas;
+  const lblAtivos = contar(R.casos.filter(c => c.status==='ativo' && filtroBase(c) && lblsDe(c).length), c => lblsDe(c));
+  // tempo médio por etapa
+  const etapa = {};
+  R.historico.forEach(h => {
+    if (!h.deColuna || !Number(h.segundosNaAnterior) || !noPer(h.quando) || ult[h.deQuadro] === h.deColuna) return;
+    if (RF.quadro && h.deQuadro !== RF.quadro) return;
+    if (RF.servico) { const c = R.casos.find(x=>x.id===h.casoId); if (!c || !servicosDe(c).includes(RF.servico)) return; }
+    const k = `${h.deQuadro} › ${h.deColuna}`; (etapa[k] ||= []).push(h.segundosNaAnterior/86400);
+  });
+  const etapas = Object.entries(etapa).map(([k,a]) => [k, media(a), a.length]).sort((a,b)=>b[1]-a[1]).slice(0,14);
+  const movs = contar(R.historico.filter(h => h.usuario && h.usuario!=='Formulário' && noPer(h.quando) && (!RF.quadro || h.paraQuadro===RF.quadro)), h => h.usuario);
+
+  // por mês (12 meses)
+  const meses = []; const d0 = new Date(); d0.setDate(1);
+  for (let i = 11; i >= 0; i--){ const d = new Date(d0.getFullYear(), d0.getMonth()-i, 1); meses.push([`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')]); }
+  const pm = meses.map(([k,rot]) => [rot, todos.filter(c => dia(c.criadoEm).slice(0,7)===k).length]);
+  const maxM = Math.max(1, ...pm.map(x=>x[1]));
+  const n1 = v => v.toFixed(1).replace('.',',');
+
+  $('#reports').innerHTML = `
+  <div class="rfil">
+    <div><label>De</label><input type="date" id="r-de" value="${RF.de}"></div>
+    <div><label>Até</label><input type="date" id="r-ate" value="${RF.ate}"></div>
+    <div><label>Quadro</label><select id="r-q"><option value="">Todos</option>${qs.map(q=>`<option ${q.nome===RF.quadro?'selected':''}>${esc(q.nome)}</option>`).join('')}</select></div>
+    <div><label>Serviço</label><select id="r-s"><option value="">Todos</option>${[...new Set(R.casos.flatMap(servicosDe))].sort().map(s=>`<option ${s===RF.servico?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+    <div style="min-width:auto"><button class="btn" id="r-mes">Este mês</button> <button class="btn" id="r-csv">Exportar CSV</button></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span>Pedidos no período</span><b>${per.length}</b></div>
+    <div class="kpi"><span>Concluídos (dos pedidos do período)</span><b>${per.filter(conclu).length}</b></div>
+    <div class="kpi"><span>Tempo médio até a conclusão</span><b>${tempos.length ? n1(media(tempos))+' dias' : '—'}</b></div>
+    <div class="kpi"><span>Parados há 7+ dias (agora)</span><b style="color:${parados.length?'var(--red)':'inherit'}">${parados.length}</b></div>
+    <div class="kpi"><span>Com prazo vencido (agora)</span><b style="color:${atrasados.length?'var(--red)':'inherit'}">${atrasados.length}</b></div>
+  </div>
+  <div class="rgrid">
+    ${barras('Serviços solicitados', 'No período · um pedido pode ter mais de um serviço', contar(per, c=>servicosDe(c)))}
+    ${barras('Pedidos por dentista', 'Top 12 no período', contar(per, c=>c.dentista).slice(0,12))}
+    <div class="rcard"><h4>Pedidos por mês</h4><p class="sub">Últimos 12 meses</p>
+      <div class="cols">${pm.map(([r,v])=>`<div><b>${v||''}</b><i style="height:${v/maxM*100}%"></i><span>${r}</span></div>`).join('')}</div></div>
+    ${barras('Onde os casos demoram mais', 'Tempo médio em cada coluna (dias) · casos que saíram dela no período', etapas.map(([k,v,n])=>[k,v,`(${n})`]), v=>n1(v), true)}
+    ${barras('Origem dos pedidos', 'No período', contar(per, c=>c.origem))}
+    ${barras('Etiquetas nos casos em andamento', 'Agora · ex.: quantos estão com FALTA LANÇAR', lblAtivos)}
+    ${barras('Casos por quadro agora', 'Pedidos do período, pelo quadro em que estão', contar(per, c=>c.quadro))}
+    ${barras('Movimentações por pessoa', 'Cartões movidos no período', movs)}
+    <div class="rcard" style="grid-column:1/-1"><h4>Casos parados há 7 dias ou mais</h4><p class="sub">Clique para abrir o caso</p>
+      ${parados.length ? `<table class="tbl"><tr><th>OS</th><th>Paciente</th><th>Dentista</th><th>Serviço</th><th>Onde está</th><th>Parado há</th></tr>
+      ${parados.map(c=>`<tr class="click" data-id="${esc(c.id)}"><td>${esc(c.id)}</td><td>${esc(c.paciente)}</td><td>${esc(c.dentista)}</td><td>${esc(c.servico)}</td><td>${esc(c.quadro)} › ${esc(c.coluna)}</td><td><b>${dias(c.colunaDesde)} dias</b></td></tr>`).join('')}</table>` : '<p class="muted">Nenhum caso parado.</p>'}
+    </div>
+  </div>`;
+
+  const upd = () => { RF.de=$('#r-de').value; RF.ate=$('#r-ate').value; RF.quadro=$('#r-q').value; RF.servico=$('#r-s').value; renderRel(); };
+  ['#r-de','#r-ate','#r-q','#r-s'].forEach(s => $(s).onchange = upd);
+  $('#r-mes').onclick = () => { RF.de=''; renderRel(); };
+  $('#r-csv').onclick = () => csv(per);
+  $('#reports').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => abrirCaso(tr.dataset.id));
+}
+
+function barras(titulo, sub, pares, fmt = v => v, quente = false){
+  const max = Math.max(1, ...pares.map(p => p[1]));
+  return `<div class="rcard"><h4>${titulo}</h4><p class="sub">${sub}</p>${pares.length ? pares.map(([k,v,extra],i) =>
+    `<div class="bar ${quente&&i<3?'hot':''}"><span class="bl" title="${esc(k)}">${esc(k)}</span><span class="bt"><i style="width:${v/max*100}%"></i></span><span class="bv">${fmt(v)}${extra?` <em>${extra}</em>`:''}</span></div>`).join('') : '<p class="muted">Sem dados no período.</p>'}</div>`;
+}
+
+function csv(lista){
+  const cols = ['id','criadoEm','paciente','dentista','origem','clinica','servico','dentes','quadro','coluna','etiquetas','prazo','responsavel','status'];
+  const linhas = [cols.join(';'), ...lista.map(c => cols.map(k => `"${String(c[k]??'').replace(/"/g,'""')}"`).join(';'))];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+linhas.join('\n')], {type:'text/csv;charset=utf-8'}));
+  a.download = `exact-casos-${RF.de}-a-${RF.ate}.csv`; a.click();
+}
+
+/* ===== TOAST ===== */
+function toast(msg, erro=false, acaoTxt, acaoFn){
+  const t = document.createElement('div'); t.className = 't' + (erro?' err':'');
+  t.innerHTML = `<span>${esc(msg)}</span>`;
+  if (acaoTxt){ const b = document.createElement('button'); b.className='btn sm wa'; b.textContent=acaoTxt; b.onclick=()=>{acaoFn(); t.remove();}; t.appendChild(b); }
+  $('#toast').appendChild(t); setTimeout(() => t.remove(), acaoTxt ? 12000 : 3500);
+}
+
+/* ===== MODO DEMONSTRAÇÃO (sem API_URL) ===== */
+const DEMO_Q = {
+  'Entrada dos Casos':[['Pedidos não revisados','Pedido recebido'],['Arquivos alinhados'],['Arquivos enviados'],['CAD autorizado','Desenho aprovado',1],['Recebidos'],['Entrega Final','Pronto para entrega',1]],
+  'Mega Prótese':[['Ordem de Serviço + Alinhamento dos arquivos - SAYMON'],['CAD - Mega Prótese','Em desenho (CAD)',1],['Autorizado - Tiago'],['CAM - Mega Prótese','Em produção',1],['Ajuste Cerâmica - Mega Prótese'],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
+  'IOA':[['Ordem de serviço - SAYMON'],['CAD (Desenho) - SAYMON','Em desenho (CAD)',1],['Autorizado - Tiago / Lilian'],['CAM (Imprimir) - SAYMON','Em produção',1],['Para Entregar','Pronto para entrega',1],['Trabalhos Finalizados']],
+  'Zlab':[['Ordem de serviço + Alinhamento dos arquivos'],['CAD - ExactLab','Em desenho (CAD)',1],['Impressão dos Modelos - EXACT'],['CAM - Zlab','Em produção',1],['Dentes fresando e Sinterizando'],['Enviados para EXACTLAB'],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
+  'Cirurgia Guiada + Prototipagem':[['Ordem de serviço - SAYMON'],['Aguardando Autorização do Dr(a)','Aguardando sua autorização',1],['CAD (Desenho) - ANA KEILA'],['Autorizado - ANA KEILA','Planejamento aprovado',1],['CAM: Impressão - SAYMON'],['Para Entregar','Pronto para entrega',1],['Verificar forma de Pagamento'],['Para Lançar - SAYMON'],['Trabalhos Finalizados']],
+  'Externo':[['Ordem de serviço'],['Aguardando Autorização do Dr(a)','Aguardando sua autorização',1],['CAM: Impressão - SAYMON'],['Para Entregar','Pronto para entrega',1],['Verificar forma de Pagamento'],['Para Lançar'],['Trabalhos Finalizados']],
+  'Trabalhos de PPR':[['Ordem de serviço - SAYMON'],['CAM - Em Processo','Em produção',1],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
+  'Vicente - Orto':[['Ordem de serviço - SAYMON'],['Contenção ortodôntica','Em produção',1],['Aparelho ortopédico'],['Recebidos - SAYMON'],['Entregues - SAYMON','Entregue',1]],
+  'Lenilson':[['Ordem de Serviço - SAYMON'],['Gengiva Artificial - SAYMON'],['Plano de Orientação - SAYMON','Plano de orientação',1],['Barra fundida - SAYMON'],['Montagem dos Dentes - SAYMON','Montagem dos dentes',1],['Acrilização - SAYMON'],['Entrega Final - SAYMON','Entregue',1]],
+  'Jonas Pinho':[['Ordem de Serviço'],['CAM - Jonas Pinho'],['CAD - Exact Lab','Em desenho (CAD)',1],['Impressão Modelos - Exact Lab'],['Fresagem/Sinterização - Jonas Pinho'],['Envio - Jonas Pinho'],['Recebidos - Exact Lab','Recebido no laboratório',1]]
+};
+let D = null;
+const ROTULOS = {paciente:'Paciente', servico:'Serviços', dentista:'Dentista', dentistaWhats:'WhatsApp', dentistaEmail:'E-mail', origem:'Origem', clinica:'Escola/clínica', dataSolicitacao:'Data da solicitação', dentes:'Dentes', cor:'Cor', material:'Material', componente:'Componente', prazo:'Prazo', observacoes:'Observações'};
+function gerarDemo(){
+  const quadros = Object.entries(DEMO_Q).map(([nome, cols]) => ({nome, colunas: cols.map(([n,p,a],i)=>({nome:n, ordem:i+1, publico:p||n, avisar:!!a}))}));
+  const dent = ['Ana Paula Souza','Carlos Lima','Fernanda Rocha','João Mendes','Larissa Costa','Paulo Henrique','Renata Alves','Marcos Vinícius','Juliana Prado'];
+  const pac = ['Maria','José','Antônia','Francisco','Raimunda','Pedro','Luzia','Sebastião','Joana','Lucas','Gabriela','Rafael','Beatriz','Mateus','Camila'];
+  const sob = ['Silva','Sousa','Oliveira','Pereira','Carvalho','Ribeiro','Araújo','Barbosa','Moraes','Teixeira'];
+  const destino = {'ExactGuide – Cirurgia guiada':'Cirurgia Guiada + Prototipagem','ExactPerio – Guia periodontal':'Cirurgia Guiada + Prototipagem','ExactShell – Mockup impresso':'Cirurgia Guiada + Prototipagem','ExactSplint – Placa miorrelaxante COM guias de desoclusão':'Externo','ExactSmileDesign – Enceramento digital':'Zlab','Coroas em cerâmica sobre implante':'Mega Prótese','Coroas/facetas em cerâmica sobre dente':'IOA','Montagem dos dentes':'Lenilson','Estrutura metálica para PPR':'Trabalhos de PPR','Contenção ortodôntica':'Vicente - Orto','ExactProtus – Mandíbula':'Cirurgia Guiada + Prototipagem','ExactCrown – Coroa impressa com carga cerâmica':'Zlab'};
+  const serv = Object.keys(destino);
+  const grupos = [{grupo:'Serviços Laboratoriais', itens:['Barra usinada (Titânio)','Barra fundida','Protocolo provisório impresso','Modelo em gesso com gengiva artificial','Moldeira individual','Plano de orientação','Montagem dos dentes','Acrilização','Aparelho ortopédico','Contenção ortodôntica','Coroas/facetas em cerâmica sobre dente','Coroas em cerâmica sobre implante','Estrutura metálica para PPR'].map(s=>({servico:s}))},
+    ...['ExactModel – Modelo de estudo','ExactFlex – Guia multifuncional','ExactCrown – Coroa impressa com carga cerâmica','ExactProv – Coroa impressa 3D (resina sem carga cerâmica)','ExactGuide – Cirurgia guiada','ExactSplint – Placa miorrelaxante COM guias de desoclusão','ExactSplint – Placa miorrelaxante SEM guias de desoclusão','ExactPerio – Guia periodontal','ExactSmileDesign – Enceramento digital','ExactShell – Mockup impresso','ExactProtus – Mandíbula','ExactProtus – Maxila'].map(s=>({grupo:s.split(' – ')[0].toUpperCase(), itens:[{servico:s}]}))];
+  const etiquetas = [{nome:'FALTA LANÇAR',cor:'#e5484d'},{nome:'LANÇADO',cor:'#b04aa8'},{nome:'PAGO',cor:'#4f8a2c'},{nome:'BOLETO',cor:'#1f6feb'},{nome:'PIX',cor:'#0e9f9a'},{nome:'URGENTE',cor:'#e08a00'}];
+  const equipe = ['Tiago','Saymon','Ana Keila','Lilian'];
+  const dentes = ['11','21','11, 21','36','46','14, 15','Arcada superior','Arcada inferior','24','16, 17'];
+  let seed = 7; const rnd = () => (seed = (seed*9301+49297)%233280)/233280; const pick = a => a[Math.floor(rnd()*a.length)];
+  const casos = [], hist = [], coms = [];
+  const agora = Date.now();
+  for (let i = 1; i <= 64; i++){
+    const s = pick(serv), s2 = rnd()<.15 ? pick(serv) : '', idadeD = rnd()<.7 ? rnd()*30 : 30 + rnd()*120, criado = agora - idadeD*DIA;
+    const id = 'EX-' + String(i).padStart(5,'0');
+    const passos = [['Entrada dos Casos','Pedidos não revisados']];
+    const qd = quadros.find(q => q.nome === destino[s]);
+    const fase = rnd();
+    if (fase < 0.18) { const ent = quadros[0]; const k = Math.floor(rnd()*3); for (let j=1;j<=k;j++) passos.push([ent.nome, ent.colunas[j].nome]); }
+    else { qd.colunas.forEach((c,j) => passos.push([qd.nome, c.nome])); const ate = idadeD > 45 ? qd.colunas.length : 1 + Math.floor(rnd()*qd.colunas.length); passos.length = Math.min(passos.length, ate+1); }
+    const dur = passos.slice(1).map(() => 0.2 + rnd()*rnd()*9);
+    const tot = dur.reduce((a,b)=>a+b,0), lim = idadeD*0.92, f = tot > lim ? lim/tot : 1;
+    let t = criado; hist.push({casoId:id, quando:new Date(t).toISOString(), deQuadro:'', deColuna:'', paraQuadro:passos[0][0], paraColuna:passos[0][1], usuario:'Formulário', segundosNaAnterior:''});
+    for (let j = 1; j < passos.length; j++){ const dd = dur[j-1]*f; t += dd*DIA;
+      hist.push({casoId:id, quando:new Date(t).toISOString(), deQuadro:passos[j-1][0], deColuna:passos[j-1][1], paraQuadro:passos[j][0], paraColuna:passos[j][1], usuario:pick(equipe), segundosNaAnterior:String(Math.round(dd*86400))}); }
+    const [qq, cc] = passos[passos.length-1];
+    const prazo = new Date(criado + (7 + rnd()*14)*DIA).toISOString().slice(0,10);
+    casos.push({id, criadoEm:new Date(criado).toISOString(), quadro:qq, coluna:cc, colunaDesde:new Date(t).toISOString(), paciente:`${pick(pac)} ${pick(sob)}`, dentista:pick(dent), dentistaWhats:'99981234567', dentistaEmail:'', clinica:'', origem:pick(['Consultório Particular','Consultório Particular','Escola de Pós-Graduação']), componente:pick(['','Scanbody cone Morse','Mini pilar 4.1','']), dataSolicitacao:new Date(criado).toISOString().slice(0,10), etiquetas:[rnd()<.45?'FALTA LANÇAR':'', rnd()<.2?pick(['PAGO','BOLETO','PIX']):'', rnd()<.08?'URGENTE':''].filter(Boolean).join('|'), servico:s2 && s2!==s ? s+'; '+s2 : s, dentes:pick(dentes), material:pick(['Zircônia','Dissilicato','PMMA','Resina impressa','']), cor:pick(['A1','A2','A3','BL2','']), prazo, observacoes:'Caso de demonstração.', pastaUrl:'https://drive.google.com/', pastaId:'', token:'demo'+i, status:'ativo', responsavel:rnd()<.5?pick(equipe):'', atualizadoEm:new Date(t).toISOString(), anexos:String(Math.floor(rnd()*5)), comentarios:0});
+    if (rnd() < .3){ coms.push({casoId:id, quando:new Date(t).toISOString(), usuario:pick(equipe), texto:pick(['Arquivo STL conferido.','Dentista pediu para ajustar o contato proximal.','Aguardando foto de cor.'])}); casos[casos.length-1].comentarios = 1; }
+  }
+  D = {quadros, casos, hist, coms, grupos, etiquetas, equipe};
+}
+async function demoApi(acao, d){
+  if (!D) gerarDemo();
+  await new Promise(r => setTimeout(r, 120));
+  const caso = id => D.casos.find(c => c.id === id);
+  switch (acao){
+    case 'login': if (!S.user?.nome) S.user.nome = 'Tiago'; return {ok:true};
+    case 'listar': return {ok:true, quadros:D.quadros, casos:D.casos.filter(c=>c.status==='ativo'), grupos:D.grupos, etiquetas:D.etiquetas, equipe:D.equipe, usuario:{nome:S.user.nome, perfil:'admin'}, urlAcomp:'https://exemplo.github.io/pedidos/acompanhar.html', msgWhats:'Oi Dr(a). {dentista}, tudo bem? Passando pra atualizar o caso de {paciente} ({servico}): {etapa}. Pode acompanhar por aqui: {link}', autoWhats:false};
+    case 'mover': { const c = caso(d.id), agora = new Date(); const col = D.quadros.find(q=>q.nome===d.quadro).colunas.find(x=>x.nome===d.coluna);
+      const ult0 = D.hist.filter(h=>h.casoId===c.id).sort((a,b)=>a.quando<b.quando?1:-1)[0];
+      if (ult0 && ult0.paraQuadro===d.quadro && ult0.paraColuna===d.coluna) { c.posicao = d.posicao; return {ok:true, caso:c, avisar:false}; }
+      const ultimo = D.hist.filter(h=>h.casoId===c.id).sort((a,b)=>a.quando<b.quando?1:-1)[0];
+      const desde = ultimo ? new Date(ultimo.quando) : agora;
+      D.hist.push({casoId:c.id, quando:agora.toISOString(), deQuadro:ultimo?.paraQuadro||'', deColuna:ultimo?.paraColuna||'', paraQuadro:d.quadro, paraColuna:d.coluna, usuario:S.user.nome, segundosNaAnterior:String(Math.round((agora-desde)/1000))});
+      Object.assign(c, {quadro:d.quadro, coluna:d.coluna, colunaDesde:agora.toISOString(), posicao:d.posicao});
+      return {ok:true, caso:c, avisar:col.avisar, enviadoAuto:false, etapa:col.publico}; }
+    case 'editar': { const c = caso(d.id); const mud = [];
+      Object.keys(d.dados).forEach(k => { if (!['etiquetas','responsavel'].includes(k) && String(c[k]??'') !== String(d.dados[k]??'')) mud.push(`${ROTULOS[k]||k}: "${c[k]||'—'}" → "${d.dados[k]||'—'}"`); });
+      Object.assign(c, d.dados);
+      if (mud.length){ D.coms.push({casoId:c.id, quando:new Date().toISOString(), usuario:S.user.nome, texto:'[Solicitação editada]\n' + mud.join('\n')}); c.comentarios = (Number(c.comentarios)||0)+1; }
+      return {ok:true, caso:c, mudancas:mud.length}; }
+    case 'comentar': D.coms.push({casoId:d.id, quando:new Date().toISOString(), usuario:S.user.nome, texto:d.texto}); return {ok:true};
+    case 'arquivar': caso(d.id).status = 'arquivado'; return {ok:true};
+    case 'detalhe': return {ok:true, comentarios:D.coms.filter(x=>x.casoId===d.id).map(x=>({...x})), historico:D.hist.filter(x=>x.casoId===d.id).map(x=>({...x}))};
+    case 'relatorio': return {ok:true, quadros:D.quadros, etiquetas:D.etiquetas, casos:D.casos, historico:D.hist};
+    case 'etiquetas': {
+      const ren = {}; d.lista.forEach(x => { x.nome = String(x.nome||'').trim().toUpperCase(); if (x.antigo && x.antigo !== x.nome) ren[x.antigo] = x.nome; });
+      const lista = d.lista.filter(x => x.nome); D.etiquetas = lista.map(x => ({nome:x.nome, cor:x.cor}));
+      const ok = new Set(D.etiquetas.map(x=>x.nome));
+      D.casos.forEach(c => { c.etiquetas = String(c.etiquetas||'').split('|').filter(Boolean).map(n=>ren[n]||n).filter(n=>ok.has(n)).join('|'); });
+      return {ok:true, etiquetas:D.etiquetas}; }
+    case 'salvarQuadro': {
+      const nome = d.novoNome || d.quadro; if (!nome) throw new Error('Dê um nome ao quadro');
+      const cols = d.colunas.filter(c => String(c.nome).trim()); if (!cols.length) throw new Error('O quadro precisa de pelo menos uma coluna');
+      const novo = {nome, colunas: cols.map((c,i) => ({nome:c.nome.trim(), ordem:i+1, publico:(c.publico||c.nome).trim(), avisar:!!c.avisar}))};
+      const i = D.quadros.findIndex(q => q.nome === d.quadro);
+      if (i >= 0) { D.quadros[i] = novo; const mapa = {}; cols.forEach(c => { if (c.antigo) mapa[c.antigo] = c.nome.trim(); });
+        D.casos.forEach(c => { if (c.quadro === d.quadro) { c.quadro = nome; c.coluna = mapa[c.coluna] || c.coluna; } });
+        D.hist.forEach(h => { if (h.deQuadro === d.quadro) { h.deQuadro = nome; h.deColuna = mapa[h.deColuna] || h.deColuna; } if (h.paraQuadro === d.quadro) { h.paraQuadro = nome; h.paraColuna = mapa[h.paraColuna] || h.paraColuna; } }); }
+      else D.quadros.push(novo);
+      return {ok:true, quadros:D.quadros, quadro:nome}; }
+  }
+  throw new Error('Ação desconhecida');
+}
+
+/* ===== INÍCIO ===== */
+(async () => {
+  const s = lerSessao();
+  if (!API_URL){ $('#l-nome').value = 'Tiago'; $('#l-pin').value = '0000'; }
+  if (s){ S.user = s; try { await iniciar(); } catch(e){ S.user = null; } }
+})();
+</script>
+</body>
+</html>
