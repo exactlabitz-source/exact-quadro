@@ -847,12 +847,13 @@ async function detalhe(c){
     const r = await api('detalhe', {id:c.id});
     const coms = r.comentarios.sort((a,b)=> a.quando < b.quando ? 1 : -1);
     $('#m-coms').innerHTML = coms.length ? coms.map(x=>`<div class="com"><small><b>${esc(x.usuario)}</b> · ${fmtDH(x.quando)}</small><p>${esc(x.texto)}</p></div>`).join('') : '<p class="muted">Sem comentários.</p>';
-    const h = r.historico.sort((a,b)=> a.quando < b.quando ? 1 : -1);
+    const h = [...r.historico, ...(r.atividades||[]).map(a => ({...a, _ativ:true}))].sort((a,b)=> a.quando < b.quando ? 1 : -1);
     $('#m-hist').innerHTML = h.map(x => {
+      if (x._ativ) return `<li><small class="muted">${fmtDH(x.quando)} · <b>${esc(x.usuario)}</b></small><br>${esc(x.detalhe)}</li>`;
       const t = Number(x.segundosNaAnterior) ? ` <span class="muted">(${(x.segundosNaAnterior/86400).toFixed(1).replace('.',',')} dia(s) em ${esc(x.deColuna)})</span>` : '';
       const de = x.deColuna ? `${esc(x.deColuna)} → ` : 'Criado em ';
       const mudouQ = x.deQuadro && x.deQuadro !== x.paraQuadro ? ` <b>[${esc(x.paraQuadro)}]</b>` : '';
-      return `<li><small class="muted">${fmtDH(x.quando)} · ${esc(x.usuario)}</small><br>${de}<b>${esc(x.paraColuna)}</b>${mudouQ}${t}</li>`;
+      return `<li><small class="muted">${fmtDH(x.quando)} · <b>${esc(x.usuario)}</b></small><br>${de}<b>${esc(x.paraColuna)}</b>${mudouQ}${t}</li>`;
     }).join('');
   } catch(e){ $('#m-coms').innerHTML = `<p class="erro">${esc(e.message)}</p>`; }
 }
@@ -866,7 +867,7 @@ $('#modal').addEventListener('click', e => { if (e.target.id==='modal' || e.targ
 document.addEventListener('keydown', e => { if (e.key==='Escape' && !$('#modal').hidden) fecharModal(); });
 
 /* ===== RELATÓRIOS ===== */
-const RF = {de:'', ate:'', quadro:'', servico:''};
+const RF = {de:'', ate:'', quadro:'', servico:'', pessoa:''};
 async function carregarRel(){
   $('#reports').innerHTML = '<p class="muted">Carregando relatórios…</p>';
   try { S.rel = await api('relatorio'); renderRel(); }
@@ -907,6 +908,12 @@ function renderRel(){
     const k = `${h.deQuadro} › ${h.deColuna}`; (etapa[k] ||= []).push(h.segundosNaAnterior/86400);
   });
   const etapas = Object.entries(etapa).map(([k,a]) => [k, media(a), a.length]).sort((a,b)=>b[1]-a[1]).slice(0,14);
+  const ativ = (R.atividades||[]).filter(a => noPer(a.quando) && a.usuario !== 'Formulário' && a.acao !== 'Entrou no quadro');
+  const pessoas = [...new Set((R.atividades||[]).map(a=>a.usuario).filter(u => u && u!=='Formulário'))].sort();
+  const ativF = ativ.filter(a => !RF.pessoa || a.usuario === RF.pessoa).sort((a,b)=> a.quando < b.quando ? 1 : -1);
+  const tiposA = ['Moveu','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
+  const porPessoa = {}; ativ.forEach(a => { (porPessoa[a.usuario] ||= {}); porPessoa[a.usuario][a.acao] = (porPessoa[a.usuario][a.acao]||0)+1; });
+  const ultAcesso = {}; (R.atividades||[]).forEach(a => { if (a.acao==='Entrou no quadro' && (!ultAcesso[a.usuario] || a.quando > ultAcesso[a.usuario])) ultAcesso[a.usuario] = a.quando; });
   const movs = contar(R.historico.filter(h => h.usuario && h.usuario!=='Formulário' && noPer(h.quando) && (!RF.quadro || h.paraQuadro===RF.quadro)), h => h.usuario);
 
   // por mês (12 meses)
@@ -941,6 +948,15 @@ function renderRel(){
     ${barras('Etiquetas nos casos em andamento', 'Agora · ex.: quantos estão com FALTA LANÇAR', lblAtivos)}
     ${barras('Casos por quadro agora', 'Pedidos do período, pelo quadro em que estão', contar(per, c=>c.quadro))}
     ${barras('Movimentações por pessoa', 'Cartões movidos no período', movs)}
+    <div class="rcard" style="grid-column:1/-1"><h4>Atividade da equipe</h4><p class="sub">Quem fez o quê no período · também fica gravado na aba "Atividades" da planilha</p>
+      ${Object.keys(porPessoa).length ? `<table class="tbl"><tr><th>Pessoa</th>${tiposA.filter(t=>ativ.some(a=>a.acao===t)).map(t=>`<th>${esc(t)}</th>`).join('')}<th>Total</th><th>Último acesso</th></tr>
+      ${Object.entries(porPessoa).sort((a,b)=>Object.values(b[1]).reduce((s,x)=>s+x,0)-Object.values(a[1]).reduce((s,x)=>s+x,0)).map(([p,m])=>`<tr><td><b>${esc(p)}</b></td>${tiposA.filter(t=>ativ.some(a=>a.acao===t)).map(t=>`<td>${m[t]||''}</td>`).join('')}<td><b>${Object.values(m).reduce((s,x)=>s+x,0)}</b></td><td>${ultAcesso[p]?fmtDH(ultAcesso[p]):'—'}</td></tr>`).join('')}</table>` : '<p class="muted">Nenhuma ação registrada no período.</p>'}
+      <div style="display:flex;gap:10px;align-items:center;margin:16px 0 8px"><b>Registro detalhado</b>
+        <select id="r-p" style="width:auto;flex:none"><option value="">Todas as pessoas</option>${pessoas.map(p=>`<option ${p===RF.pessoa?'selected':''}>${esc(p)}</option>`).join('')}</select>
+        <span class="muted">${ativF.length} ação(ões)${ativF.length>300?' · mostrando as 300 mais recentes':''}</span></div>
+      ${ativF.length ? `<div style="max-height:420px;overflow:auto"><table class="tbl"><tr><th>Quando</th><th>Pessoa</th><th>Ação</th><th>Caso</th><th>Detalhe</th></tr>
+      ${ativF.slice(0,300).map(a=>`<tr ${a.casoId?`class="click" data-id="${esc(a.casoId)}"`:''}><td style="white-space:nowrap">${fmtDH(a.quando)}</td><td><b>${esc(a.usuario)}</b></td><td>${esc(a.acao)}</td><td>${a.casoId?`${esc(a.casoId)} · ${esc(a.paciente)}`:'—'}</td><td>${esc(a.detalhe)}</td></tr>`).join('')}</table></div>` : ''}
+    </div>
     <div class="rcard" style="grid-column:1/-1"><h4>Casos parados há 7 dias ou mais</h4><p class="sub">Clique para abrir o caso</p>
       ${parados.length ? `<table class="tbl"><tr><th>OS</th><th>Paciente</th><th>Dentista</th><th>Serviço</th><th>Onde está</th><th>Parado há</th></tr>
       ${parados.map(c=>`<tr class="click" data-id="${esc(c.id)}"><td>${esc(c.id)}</td><td>${esc(c.paciente)}</td><td>${esc(c.dentista)}</td><td>${esc(c.servico)}</td><td>${esc(c.quadro)} › ${esc(c.coluna)}</td><td><b>${dias(c.colunaDesde)} dias</b></td></tr>`).join('')}</table>` : '<p class="muted">Nenhum caso parado.</p>'}
@@ -949,6 +965,7 @@ function renderRel(){
 
   const upd = () => { RF.de=$('#r-de').value; RF.ate=$('#r-ate').value; RF.quadro=$('#r-q').value; RF.servico=$('#r-s').value; renderRel(); };
   ['#r-de','#r-ate','#r-q','#r-s'].forEach(s => $(s).onchange = upd);
+  $('#r-p').onchange = () => { RF.pessoa = $('#r-p').value; renderRel(); };
   $('#r-mes').onclick = () => { RF.de=''; renderRel(); };
   $('#r-csv').onclick = () => csv(per);
   $('#reports').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => abrirCaso(tr.dataset.id));
@@ -1048,7 +1065,10 @@ async function demoApi(acao, d){
     case 'comentar': D.coms.push({casoId:d.id, quando:new Date().toISOString(), usuario:S.user.nome, texto:d.texto}); return {ok:true};
     case 'arquivar': caso(d.id).status = 'arquivado'; return {ok:true};
     case 'detalhe': return {ok:true, comentarios:D.coms.filter(x=>x.casoId===d.id).map(x=>({...x})), historico:D.hist.filter(x=>x.casoId===d.id).map(x=>({...x}))};
-    case 'relatorio': return {ok:true, quadros:D.quadros, etiquetas:D.etiquetas, casos:D.casos, historico:D.hist};
+    case 'relatorio': { const pac = id => (D.casos.find(c=>c.id===id)||{}).paciente||'';
+      const atividades = [...D.hist.filter(h=>h.deColuna).map(h=>({quando:h.quando, usuario:h.usuario, acao:'Moveu', casoId:h.casoId, paciente:pac(h.casoId), detalhe:`${h.deColuna}  →  ${h.paraColuna}`})),
+        ...D.coms.map(c=>({quando:c.quando, usuario:c.usuario, acao:c.texto.startsWith('[Solicitação editada]')?'Editou a solicitação':'Comentou', casoId:c.casoId, paciente:pac(c.casoId), detalhe:c.texto.slice(0,200)}))];
+      return {ok:true, quadros:D.quadros, etiquetas:D.etiquetas, casos:D.casos, historico:D.hist, atividades}; }
     case 'etiquetas': {
       const ren = {}; d.lista.forEach(x => { x.nome = String(x.nome||'').trim().toUpperCase(); if (x.antigo && x.antigo !== x.nome) ren[x.antigo] = x.nome; });
       const lista = d.lista.filter(x => x.nome); D.etiquetas = lista.map(x => ({nome:x.nome, cor:x.cor}));
