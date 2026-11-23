@@ -84,6 +84,15 @@ h1,h2,h3,h4,.tab,.btn,.kpi b{font-family:Montserrat,"Segoe UI",system-ui,sans-se
 .age{font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;background:#edf1f4;color:var(--mut)}
 .age.a{background:var(--amber-bg);color:var(--amber)}
 .age.r{background:var(--red-bg);color:var(--red)}
+/* origem do trabalho: cor do cartão */
+.card.o-part,.ent-card.o-part{background:#eef4ff;box-shadow:var(--sh),inset 0 3px 0 #2f6fd6}
+.card.o-pos,.ent-card.o-pos{background:#eaf7ef;box-shadow:var(--sh),inset 0 3px 0 #1a8a5a}
+.orig{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:2px 6px;margin:0 0 5px;color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.orig.o-part{background:#2f6fd6}
+.orig.o-pos{background:#1a8a5a}
+.orig.o-nd{background:#8896a3}
+.leg-orig{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--mut);margin-left:auto;padding-left:12px;white-space:nowrap}
+.leg-orig i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .pac{font-weight:700;font-size:14px}
 .serv{color:var(--teal-d);font-weight:600;font-size:12.5px;margin:1px 0 3px}
 .meta{font-size:12px;color:var(--mut)}
@@ -265,6 +274,7 @@ details.serv label input{width:auto}
     <img class="logo" src="logo-exact.png" alt="Exact">
     <input id="busca" type="search" placeholder="Buscar paciente, dentista, OS…">
     <select id="f-lbl" title="Filtrar por etiqueta"><option value="">Todas as etiquetas</option></select>
+    <select id="f-orig" title="Filtrar por origem do trabalho"><option value="">Todas as origens</option><option value="part">Consultório Particular</option><option value="pos">Pós-Graduação / Curso</option></select>
     <button class="btn on" id="b-quadro">Quadros</button>
     <button class="btn" id="b-rel">Relatórios</button>
     <span class="sp"></span>
@@ -288,7 +298,7 @@ details.serv label input{width:auto}
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // cole aqui a URL do Apps Script implantado (termina em /exec)
 
 /* ===== ESTADO ===== */
-const S = {user:null, quadros:[], casos:[], grupos:[], etiquetas:[], filtroLbl:'', perfil:'', equipe:[], atual:null, busca:'', urlAcomp:'', msgWhats:'', autoWhats:false, view:'quadro', rel:null};
+const S = {user:null, quadros:[], casos:[], grupos:[], etiquetas:[], filtroLbl:'', filtroOrig:'', perfil:'', equipe:[], atual:null, busca:'', urlAcomp:'', msgWhats:'', autoWhats:false, view:'quadro', rel:null};
 const DIA = 864e5;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -381,7 +391,10 @@ const corLbl = n => (S.etiquetas.find(e => e.nome === n) || {}).cor || '#5f7282'
 const lblHTML = (n, off) => `<span class="lbl ${off?'off':''}" style="background:${esc(corLbl(n))}">${esc(n)}</span>`;
 const servicosDe = c => String(c.servico||'').split(';').map(x=>x.trim()).filter(Boolean);
 function renderFiltroLbl(){ const sel = $('#f-lbl'); sel.innerHTML = '<option value="">Todas as etiquetas</option>' + S.etiquetas.map(e=>`<option ${e.nome===S.filtroLbl?'selected':''}>${esc(e.nome)}</option>`).join(''); }
-const bate = c => (!S.filtroLbl || lblsDe(c).includes(S.filtroLbl)) && (!S.busca || norm([c.id,c.paciente,c.dentista,c.servico,c.clinica,c.dentes,c.responsavel,c.etiquetas,c.origem].join(' ')).includes(norm(S.busca)));
+const origemTipo = c => { const o = norm(c.origem||''); return /pos|escola|curso|gradua/.test(o) ? 'pos' : /particular|consult/.test(o) ? 'part' : ''; };
+const origemHTML = c => { const t = origemTipo(c); if (!t) return `<span class="orig o-nd">Origem não informada</span>`;
+  return t==='pos' ? `<span class="orig o-pos" title="${esc(c.origem)}${c.clinica?' · '+esc(c.clinica):''}">Pós-graduação${c.clinica?' · '+esc(c.clinica):''}</span>` : `<span class="orig o-part">Particular</span>`; };
+const bate = c => (!S.filtroOrig || origemTipo(c) === S.filtroOrig) && (!S.filtroLbl || lblsDe(c).includes(S.filtroLbl)) && (!S.busca || norm([c.id,c.paciente,c.dentista,c.servico,c.clinica,c.dentes,c.responsavel,c.etiquetas,c.origem].join(' ')).includes(norm(S.busca)));
 function linkAcomp(c){ return S.urlAcomp ? `${S.urlAcomp}${S.urlAcomp.includes('?')?'&':'?'}os=${encodeURIComponent(c.id)}&k=${c.token}` : ''; }
 function linkWhats(c, etapa){
   const mapa = {dentista:c.dentista, paciente:c.paciente, servico:c.servico, etapa:etapa||etapaPub(c), link:linkAcomp(c), os:c.id};
@@ -405,16 +418,17 @@ function renderTabs(){
     Entrada de casos <b>${nE}</b></button><span class="tab-sep"></span>`;
   $('#tabs').innerHTML = btnE + quadrosTrabalho().map(q => {
     const todos = S.casos.filter(c => c.quadro === q.nome);
-    const n = (S.busca || S.filtroLbl) ? todos.filter(bate).length : todos.length;
-    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
+    const n = (S.busca || S.filtroLbl || S.filtroOrig) ? todos.filter(bate).length : todos.length;
+    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl||S.filtroOrig)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
   }).join('') + (S.perfil==='admin' && S.view==='quadro' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
 }
 
 function cardHTML(c){
   const d = dias(c.colunaDesde), cls = d>=7?'r':d>=3?'a':'';
   const atrasado = c.prazo && c.prazo < hojeISO() && !ehUltima(c);
-  return `<article class="card ${cls}" data-id="${esc(c.id)}">
+  return `<article class="card ${cls} ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
     <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${cls}" title="Dias nesta coluna">${d===0?'hoje':d+'d'}</span></div>
+    ${origemHTML(c)}
     ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
     <div class="pac">${esc(c.paciente)}</div>
     <div class="serv">${esc(servicosDe(c).join(' · '))}</div>
@@ -448,12 +462,13 @@ function renderEntrada(){
       <p>${lista.length ? `<b>${lista.length}</b> caso${lista.length>1?'s':''} aguardando distribuição · os mais antigos primeiro` : 'Tudo distribuído.'}</p></div>
     </div>
     ${lista.length ? `<div class="ent-grid">${lista.map(c => `
-      <article class="ent-card" data-id="${esc(c.id)}">
+      <article class="ent-card ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
         <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${dias(c.criadoEm)>=1?'a':''}">chegou ${haQuanto(c.criadoEm)}</span></div>
+        ${origemHTML(c)}
         ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
         <div class="pac">${esc(c.paciente)}</div>
         <div class="ent-serv">${servicosDe(c).map(x=>`<span class="tag-serv">${esc(x)}</span>`).join('')}</div>
-        <div class="meta">Dr(a). ${esc(c.dentista)}${c.origem?` · ${esc(c.origem)}`:''}${c.dentes?` · dentes ${esc(c.dentes)}`:''}</div>
+        <div class="meta">Dr(a). ${esc(c.dentista)}${c.dentes?` · dentes ${esc(c.dentes)}`:''}</div>
         ${c.observacoes ? `<p class="ent-obs">${esc(c.observacoes.length > 140 ? c.observacoes.slice(0,140)+'…' : c.observacoes)}</p>` : ''}
         <div class="foot">${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)} anexo(s)</span>`:''}${c.prazo?`<span class="ico">${IC.cal}prazo ${fmtD(c.prazo)}</span>`:''}<a class="ent-ver" data-abrir>Ver pedido completo</a></div>
         <div class="ent-dest"><span>Enviar para:</span>${destinos.map(q => `<button data-dest="${esc(q.nome)}">${esc(q.nome)}</button>`).join('')}</div>
@@ -480,6 +495,7 @@ $('#tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab'); if (t){ S.atual = t.dataset.q; S.view = 'quadro'; render(); }
 });
 $('#f-lbl').onchange = e => { S.filtroLbl = e.target.value; render(); };
+$('#f-orig').onchange = e => { S.filtroOrig = e.target.value; render(); };
 $('#busca').addEventListener('input', e => { S.busca = e.target.value; if (S.view==='quadro') render(); });
 $('#b-quadro').onclick = () => { S.view = S.view==='rel' ? 'quadro' : S.view; render(); };
 $('#b-rel').onclick = async () => { S.view='rel'; render(); await carregarRel(); };
@@ -1037,7 +1053,7 @@ function gerarDemo(){
       hist.push({casoId:id, quando:new Date(t).toISOString(), deQuadro:passos[j-1][0], deColuna:passos[j-1][1], paraQuadro:passos[j][0], paraColuna:passos[j][1], usuario:pick(equipe), segundosNaAnterior:String(Math.round(dd*86400))}); }
     const [qq, cc] = passos[passos.length-1];
     const prazo = new Date(criado + (7 + rnd()*14)*DIA).toISOString().slice(0,10);
-    casos.push({id, criadoEm:new Date(criado).toISOString(), quadro:qq, coluna:cc, colunaDesde:new Date(t).toISOString(), paciente:`${pick(pac)} ${pick(sob)}`, dentista:pick(dent), dentistaWhats:'99981234567', dentistaEmail:'', clinica:'', origem:pick(['Consultório Particular','Consultório Particular','Escola de Pós-Graduação']), componente:pick(['','Scanbody cone Morse','Mini pilar 4.1','']), dataSolicitacao:new Date(criado).toISOString().slice(0,10), etiquetas:[rnd()<.45?'FALTA LANÇAR':'', rnd()<.2?pick(['PAGO','BOLETO','PIX']):'', rnd()<.08?'URGENTE':''].filter(Boolean).join('|'), servico:s2 && s2!==s ? s+'; '+s2 : s, dentes:pick(dentes), material:pick(['Zircônia','Dissilicato','PMMA','Resina impressa','']), cor:pick(['A1','A2','A3','BL2','']), prazo, observacoes:'Caso de demonstração.', pastaUrl:'https://drive.google.com/', pastaId:'', token:'demo'+i, status:'ativo', responsavel:rnd()<.5?pick(equipe):'', atualizadoEm:new Date(t).toISOString(), anexos:String(Math.floor(rnd()*5)), comentarios:0});
+    casos.push({id, criadoEm:new Date(criado).toISOString(), quadro:qq, coluna:cc, colunaDesde:new Date(t).toISOString(), paciente:`${pick(pac)} ${pick(sob)}`, dentista:pick(dent), dentistaWhats:'99981234567', dentistaEmail:'', ...(rnd()<.35 ? {origem:'Escola de Pós-Graduação', clinica:pick(['IOA','IOA Implante','ABO'])} : {origem:'Consultório Particular', clinica:''}), componente:pick(['','Scanbody cone Morse','Mini pilar 4.1','']), dataSolicitacao:new Date(criado).toISOString().slice(0,10), etiquetas:[rnd()<.45?'FALTA LANÇAR':'', rnd()<.2?pick(['PAGO','BOLETO','PIX']):'', rnd()<.08?'URGENTE':''].filter(Boolean).join('|'), servico:s2 && s2!==s ? s+'; '+s2 : s, dentes:pick(dentes), material:pick(['Zircônia','Dissilicato','PMMA','Resina impressa','']), cor:pick(['A1','A2','A3','BL2','']), prazo, observacoes:'Caso de demonstração.', pastaUrl:'https://drive.google.com/', pastaId:'', token:'demo'+i, status:'ativo', responsavel:rnd()<.5?pick(equipe):'', atualizadoEm:new Date(t).toISOString(), anexos:String(Math.floor(rnd()*5)), comentarios:0});
     if (rnd() < .3){ coms.push({casoId:id, quando:new Date(t).toISOString(), usuario:pick(equipe), texto:pick(['Arquivo STL conferido.','Dentista pediu para ajustar o contato proximal.','Aguardando foto de cor.'])}); casos[casos.length-1].comentarios = 1; }
   }
   D = {quadros, casos, hist, coms, grupos, etiquetas, equipe};
