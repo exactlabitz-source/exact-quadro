@@ -258,6 +258,12 @@ details.serv label input{width:auto}
 <div id="login">
   <div>
   <img class="login-logo" src="logo-exact.png" alt="Exact Odontologia Digital">
+  <div class="login-box" id="reentrando" hidden style="text-align:center">
+    <h1>Quadro de Casos</h1>
+    <p class="muted" id="re-msg">Entrando…</p>
+    <p class="erro" id="re-erro"></p>
+    <div id="re-btns" hidden style="display:flex;gap:8px;justify-content:center"><button type="button" class="btn" id="re-tentar">Tentar de novo</button><button type="button" class="btn" id="re-outra">Entrar com outra conta</button></div>
+  </div>
   <form class="login-box" id="f-login" autocomplete="on">
     <h1>Quadro de Casos</h1>
     <p class="muted">Entre com seu nome e PIN da equipe.</p>
@@ -1109,8 +1115,26 @@ async function demoApi(acao, d){
 (async () => {
   const s = lerSessao();
   if (!API_URL){ $('#l-nome').value = 'Tiago'; $('#l-pin').value = '0000'; }
-  if (s){ S.user = s; try { await iniciar(); } catch(e){ S.user = null; } }
+  if (s && s.nome) reentrar(s);
 })();
+
+/* Recarregar a página (F5) mantém a pessoa logada; a sessão só acaba ao fechar a aba ou clicar em Sair. */
+async function reentrar(s){
+  $('#f-login').hidden = true; $('#reentrando').hidden = false;
+  $('#re-msg').textContent = `Entrando como ${s.nome}…`; $('#re-erro').textContent = ''; $('#re-btns').hidden = true;
+  S.user = s;
+  for (let tent = 1; tent <= 3; tent++){
+    try { await iniciar(); return; }
+    catch(e){
+      if (/pin|inv[aá]lid|senha/i.test(e.message || '')) { try{ sessionStorage.removeItem('exq'); }catch(_){} S.user = null;
+        $('#reentrando').hidden = true; $('#f-login').hidden = false; $('#l-nome').value = s.nome; $('#l-erro').textContent = e.message; return; }
+      if (tent < 3) { $('#re-msg').textContent = `Conexão lenta, tentando de novo (${tent+1}/3)…`; await new Promise(r => setTimeout(r, 2500)); }
+      else { $('#re-msg').textContent = `Sessão de ${s.nome}`; $('#re-erro').textContent = 'Não foi possível carregar o quadro: ' + (e.message || 'sem conexão'); $('#re-btns').hidden = false; }
+    }
+  }
+}
+$('#re-tentar').onclick = () => reentrar(lerSessao() || S.user);
+$('#re-outra').onclick = () => { try{ sessionStorage.removeItem('exq'); }catch(e){} S.user = null; $('#reentrando').hidden = true; $('#f-login').hidden = false; };
 </script>
 </body>
 </html>
