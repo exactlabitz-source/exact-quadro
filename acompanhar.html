@@ -36,11 +36,19 @@ ol li small{display:block;color:var(--mut)}
 ol li:not(.feita){color:var(--mut)}
 .btn{display:block;text-align:center;background:#1f9d55;color:#fff;border-radius:10px;padding:12px;font-weight:700;text-decoration:none}
 .erro{text-align:center;color:var(--mut)}
+.box h2{margin:0 0 4px;font:700 16px Montserrat,"Segoe UI",system-ui,sans-serif}
+.drop{border:2px dashed #c3cde0;border-radius:12px;padding:18px;text-align:center;background:#f7f9fd;cursor:pointer;margin-top:10px}
+.drop.on{border-color:var(--teal);background:#fdeef5}
+.drop b{display:block;color:var(--navy)}.drop small{color:var(--mut)}
+.bts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.bts button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600;color:var(--navy);cursor:pointer}
+#env{margin:10px 0 0;padding:0;list-style:none;font-size:14px}#env li{padding:4px 0;color:var(--mut)}
 </style>
 </head>
 <body>
 <header><img src="logo-exact.png" alt="Exact Odontologia Digital"><p>Acompanhe o andamento do seu caso</p></header>
 <main id="m"><div class="box erro">Carregando…</div></main>
+<script src="upload.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // mesma URL do Apps Script
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -73,7 +81,32 @@ const fmtD = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') ? s.split('-').reverse().joi
       <div class="agora">Situação atual<b>${esc(c.etapa)}</b></div>
     </div>
     <div class="box"><ol>${j.etapas.map(e => `<li class="${e.feita?'feita':''} ${e.atual?'atual':''}"><i></i><b>${esc(e.nome)}</b>${e.quando?`<small>${fmt(e.quando)}</small>`:''}</li>`).join('')}</ol></div>
+    <div class="box"><h2>Enviar arquivos para o laboratório</h2>
+      <div class="info">Fotos, escaneamentos (STL), tomografia ou qualquer arquivo do caso. Vai direto para a pasta deste paciente.</div>
+      <div class="drop" id="drop"><b>Arraste os arquivos aqui ou toque para escolher</b><small>A pasta inteira da tomografia (CD/pendrive) é compactada e enviada sozinha</small>
+        <div class="bts"><button type="button" id="b-arq">Escolher arquivos</button><button type="button" id="b-pasta">Pasta da tomografia</button><button type="button" id="b-foto">Tirar foto</button></div></div>
+      <input type="file" id="in-arq" multiple hidden><input type="file" id="in-pasta" webkitdirectory hidden><input type="file" id="in-foto" accept="image/*" capture="environment" hidden>
+      <ul id="env"></ul>
+    </div>
     ${wa}`;
+  const enviar = async fonte => {
+    if (!API_URL) return alert('Modo demonstração: nada é enviado.');
+    const itens = await EXU.coletar(fonte); if (!itens.length) return;
+    const ul = document.getElementById('env');
+    EXU.enviar(itens, {api: async (acao, dados) => { const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({acao, ...dados})}); const x = await r.json(); if (!x.ok) throw new Error(x.erro || 'Erro no servidor'); return x; },
+      id:c.id, token:k, paciente:c.paciente,
+      aoConcluir: (it, nome) => { ul.insertAdjacentHTML('afterbegin', `<li>✓ ${esc(nome)} — recebido pelo laboratório</li>`); }});
+  };
+  const d = document.getElementById('drop');
+  ['dragenter','dragover'].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add('on'); }));
+  ['dragleave','drop'].forEach(t => d.addEventListener(t, () => d.classList.remove('on')));
+  d.addEventListener('drop', e => { e.preventDefault(); enviar(e.dataTransfer); });
+  window.addEventListener('dragover', e => e.preventDefault()); window.addEventListener('drop', e => e.preventDefault());
+  d.onclick = e => { if (!e.target.closest('button')) document.getElementById('in-arq').click(); };
+  document.getElementById('b-arq').onclick = () => document.getElementById('in-arq').click();
+  document.getElementById('b-pasta').onclick = () => document.getElementById('in-pasta').click();
+  document.getElementById('b-foto').onclick = () => document.getElementById('in-foto').click();
+  ['in-arq','in-pasta','in-foto'].forEach(id => document.getElementById(id).onchange = e => { enviar(e.target.files); e.target.value = ''; });
 })();
 </script>
 </body>

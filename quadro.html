@@ -203,6 +203,16 @@ body.arrastando,body.arrastando *{cursor:grabbing!important}
 
 .sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .sec-h h4{margin:0}
+.drop{border:2px dashed #b9c6d3;border-radius:10px;padding:16px;text-align:center;background:#f7f9fc;transition:.15s;cursor:pointer}
+.drop.on{border-color:var(--teal);background:#fdeef5}
+.drop b{display:block;font-size:14px;color:var(--navy)}.drop small{color:var(--mut)}
+.drop .btns{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.arq-g{margin-top:10px}.arq-g h5{margin:0 0 4px;font-size:12px;color:var(--navy);display:flex;justify-content:space-between}
+.arq-g h5 a{font-weight:500;color:var(--teal);text-decoration:none}
+.arq{display:flex;gap:8px;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #eef1f5}
+.arq a{color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq a:hover{color:var(--teal)}
+.arq span{color:var(--mut);white-space:nowrap;font-size:12px}
+.card.solta,.ent-card.solta{box-shadow:0 0 0 3px var(--teal);transform:scale(1.02)}
 .dados{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0;background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:14px}
 .dados .full{grid-column:1/-1}
 .dados dt{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
@@ -299,6 +309,7 @@ details.serv label input{width:auto}
 <div id="toast"></div>
 <div class="load" id="load" style="width:0"></div>
 
+<script src="upload.js"></script>
 <script>
 /* ===== CONFIGURAÇÃO ===== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // cole aqui a URL do Apps Script implantado (termina em /exec)
@@ -646,6 +657,60 @@ function campo(k, rot, v, tipo='text', full=false){
 }
 function opcoes(lista, atual){ const l = [...lista]; if (atual && !l.includes(atual)) l.unshift(atual); return l.map(x=>`<option ${x===atual?'selected':''}>${esc(x)}</option>`).join(''); }
 
+/* ===== ARQUIVOS DO CASO ===== */
+function enviarParaCaso(c, fonte){
+  if (!window.EXU) return toast('Envio de arquivos indisponível', true);
+  if (!API_URL) return toast('No modo demonstração os arquivos não são enviados', true);
+  EXU.coletar(fonte).then(itens => {
+    if (!itens.length) return;
+    EXU.enviar(itens, {api, id:c.id, paciente:c.paciente, aoConcluir: () => {
+      c.anexos = String((Number(c.anexos)||0) + 1); if (S.view === 'quadro') renderBoard();
+      if (!$('#modal').hidden && $('#m-drop')?.dataset.id === c.id) listarArquivos(c);
+    }});
+    toast(`${itens.length} envio(s) para ${c.paciente} — acompanhe no canto da tela`);
+  });
+}
+async function listarArquivos(c){
+  const box = $('#m-arqs'); if (!box) return;
+  try {
+    const r = await api('arquivos', {id:c.id});
+    const gs = (r.grupos||[]).filter(g => g.arquivos.length);
+    box.innerHTML = gs.length ? gs.map(g => `<div class="arq-g"><h5>${esc(g.pasta)} (${g.arquivos.length})<a href="${esc(g.url)}" target="_blank" rel="noopener">abrir pasta</a></h5>
+      ${g.arquivos.map(a => `<div class="arq"><a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}">${esc(a.nome)}</a><span>${window.EXU?EXU.mb(a.tamanho):''} · ${fmtDH(a.quando)}</span></div>`).join('')}</div>`).join('')
+      : '<p class="muted" style="margin:8px 0 0">Nenhum arquivo ainda.</p>';
+  } catch(e){ box.innerHTML = `<p class="muted" style="margin:8px 0 0">${esc(e.message)}</p>`; }
+}
+function arquivosCaso(c){
+  const d = $('#m-drop'); if (!d) return; d.dataset.id = c.id;
+  ['dragenter','dragover'].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add('on'); }));
+  ['dragleave','drop'].forEach(t => d.addEventListener(t, () => d.classList.remove('on')));
+  d.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); enviarParaCaso(c, e.dataTransfer); });
+  d.onclick = e => { if (e.target === d || e.target.tagName === 'B' || e.target.tagName === 'SMALL') $('#m-inarq').click(); };
+  $('#m-escarq').onclick = e => { e.stopPropagation(); $('#m-inarq').click(); };
+  $('#m-escpasta').onclick = e => { e.stopPropagation(); $('#m-inpasta').click(); };
+  $('#m-inarq').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
+  $('#m-inpasta').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
+  if (API_URL) listarArquivos(c); else $('#m-arqs').innerHTML = '<p class="muted" style="margin:8px 0 0">No modo demonstração não há arquivos.</p>';
+}
+// soltar arquivos direto em cima de um cartão do quadro ou da Entrada
+const temArquivos = e => [...(e.dataTransfer?.types||[])].includes('Files');
+document.addEventListener('dragover', e => {
+  if (!temArquivos(e)) return;
+  e.preventDefault();
+  const el = e.target.closest?.('.card, .ent-card');
+  document.querySelectorAll('.solta').forEach(x => { if (x !== el) x.classList.remove('solta'); });
+  if (el) el.classList.add('solta');
+});
+document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.querySelectorAll('.solta').forEach(x => x.classList.remove('solta')); });
+document.addEventListener('drop', e => {
+  if (!temArquivos(e)) return;
+  e.preventDefault();
+  document.querySelectorAll('.solta').forEach(x => x.classList.remove('solta'));
+  if (e.target.closest?.('#m-drop')) return;
+  const el = e.target.closest?.('.card, .ent-card');
+  const c = el && S.casos.find(x => x.id === el.dataset.id); if (c) enviarParaCaso(c, e.dataTransfer);
+});
+
 function abrirCaso(id){
   const c = S.casos.find(x => x.id === id); if (!c) return;
   const link = linkAcomp(c);
@@ -686,8 +751,16 @@ function abrirCaso(id){
           <div class="full" style="display:flex;gap:8px"><button class="btn pri" id="m-salvar">Salvar alterações</button><button class="btn" id="m-cancelar">Cancelar</button></div>
         </div>
       </div>
+      <div class="sec"><div class="sec-h"><h4>Arquivos do caso</h4>${c.pastaUrl?`<a class="btn sm" href="${esc(c.pastaUrl)}" target="_blank" rel="noopener">Abrir no Drive</a>`:''}</div>
+        <div class="drop" id="m-drop">
+          <b>Arraste aqui fotos, STL, tomografia ou qualquer arquivo</b>
+          <small>A pasta da tomografia (CD/pendrive) vira um .zip na pasta DICOM · STL vai para STL · fotos e vídeos para Fotos</small>
+          <div class="btns"><button type="button" class="btn sm" id="m-escarq">Escolher arquivos</button><button type="button" class="btn sm" id="m-escpasta">Escolher pasta da tomografia</button></div>
+          <input type="file" id="m-inarq" multiple hidden><input type="file" id="m-inpasta" webkitdirectory hidden>
+        </div>
+        <div id="m-arqs"><p class="muted" style="margin:8px 0 0">Carregando arquivos…</p></div>
+      </div>
       <div class="acts">
-        ${c.pastaUrl?`<a class="btn" href="${esc(c.pastaUrl)}" target="_blank" rel="noopener">Pasta no Drive (${Number(c.anexos)||0})</a>`:''}
         ${c.dentistaWhats?`<a class="btn wa" href="${esc(linkWhats(c))}" target="_blank" rel="noopener">Avisar dentista</a>`:''}
         ${link?`<button class="btn" id="m-copiar">Copiar link do dentista</button>`:''}
         <button class="btn danger" id="m-arq">Arquivar</button>
@@ -710,6 +783,7 @@ function abrirCaso(id){
     </div>
   </div>`;
   $('#modal').hidden = false;
+  arquivosCaso(c);
 
   const encherCols = () => { const q = quadro($('#m-q').value); $('#m-c').innerHTML = (q?.colunas||[]).map(x=>`<option ${x.nome===c.coluna&&q.nome===c.quadro?'selected':''}>${esc(x.nome)}</option>`).join(''); };
   $('#m-q').onchange = encherCols; encherCols();

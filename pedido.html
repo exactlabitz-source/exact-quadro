@@ -143,17 +143,19 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
   <section class="box"><label><span class="t">Observações sobre o trabalho:</span><textarea name="observacoes" rows="5"></textarea></label></section>
 
   <section class="box"><span class="t">Imagens, vídeos, áudios e arquivos do caso</span>
-    <div class="drop" id="drop"><span>Escolher arquivo(s)<br><small style="color:var(--mut)">Fotos, vídeos, áudios, STL/PLY/OBJ, PDF, ZIP · até 30 MB cada</small></span>
+    <div class="drop" id="drop"><span>Escolher arquivo(s)<br><small style="color:var(--mut)">Fotos, vídeos, áudios, STL/PLY/OBJ, tomografia (pasta do CD ou .zip), PDF · sem limite de tamanho</small></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
     <input type="file" id="arq" multiple hidden accept="image/*,video/*,audio/*,.stl,.ply,.obj,.zip,.rar,.pdf,.dcm">
     <div class="quick">
       <button type="button" class="btn sm" id="foto">📷 Tirar foto</button>
+      <button type="button" class="btn sm" id="pastaTomo">💿 Enviar pasta da tomografia</button>
       <button type="button" class="btn sm rec" id="rec">🎙 Gravar áudio</button>
       <span id="rec-t" class="sel" style="align-self:center"></span>
     </div>
     <input type="file" id="cam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="tomo" webkitdirectory hidden>
     <ul class="files" id="lista"></ul>
-    <p class="dica">Arquivos maiores que 30 MB: envie por WeTransfer para <b>exactlabitz@gmail.com</b> e cole o link nas observações.</p>
+    <p class="dica">Pode arrastar a pasta inteira da tomografia (CD/pendrive): ela é compactada e enviada sozinha. Arquivos grandes podem levar alguns minutos — não feche a página até terminar.</p>
   </section>
 
   <div class="erro" id="erro"></div>
@@ -173,9 +175,9 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
 
 <div class="ov" id="ov" hidden><div class="ovb"><b id="ov-t">Enviando pedido…</b><div class="pb"><i id="ov-p"></i></div><small id="ov-s" style="color:var(--mut)"></small></div></div>
 
+<script src="upload.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // mesma URL do Apps Script usada no quadro.html
-const MAX_MB = 30;
 // Lista usada no modo demonstração (no modo real ela vem da aba "Servicos" da planilha)
 const GRUPOS_PADRAO = [
   {grupo:'Serviços Laboratoriais', itens:['Barra usinada (Titânio)','Barra fundida','Protocolo provisório impresso','Modelo em gesso com gengiva artificial','Moldeira individual','Plano de orientação','Montagem dos dentes','Acrilização','Aparelho ortopédico','Contenção ortodôntica','Coroas/facetas em cerâmica sobre dente','Coroas em cerâmica sobre implante','Estrutura metálica para PPR'].map(s=>({servico:s}))},
@@ -251,21 +253,25 @@ atualizarDentes();
 /* anexos */
 const fmtMB = b => (b/1048576).toFixed(1).replace('.',',') + ' MB';
 function addArquivo(nome, mime, blob){
-  if (blob.size > MAX_MB*1048576) { $('#erro').textContent = `"${nome}" tem ${fmtMB(blob.size)} (limite ${MAX_MB} MB). Envie por WeTransfer e cole o link nas observações.`; return; }
-  arquivos.push({nome, mime: mime || 'application/octet-stream', blob, url: (mime||'').startsWith('audio') ? URL.createObjectURL(blob) : ''});
+  const f = blob instanceof File && blob.name === nome ? blob : new File([blob], nome, {type: mime || 'application/octet-stream'});
+  arquivos.push({tipo:'arquivo', file:f, nome, destino: EXU.destinoDe(nome), tamanho: f.size, url: (mime||'').startsWith('audio') ? URL.createObjectURL(f) : ''});
   renderArquivos();
 }
+async function addFonte(fonte){ (await EXU.coletar(fonte)).forEach(it => arquivos.push(it)); renderArquivos(); }
 function renderArquivos(){
-  $('#lista').innerHTML = arquivos.map((a,i) => `<li><span>${esc(a.nome)}</span>${a.url?`<audio controls src="${a.url}"></audio>`:''}<small>${fmtMB(a.blob.size)}</small><button type="button" data-rm="${i}" aria-label="Remover">×</button></li>`).join('');
+  $('#lista').innerHTML = arquivos.map((a,i) => `<li><span>${a.tipo==='zip' ? `💿 Tomografia: ${esc(a.nome)} (${a.arquivos.length} arquivos)` : esc(a.nome)}</span>${a.url?`<audio controls src="${a.url}"></audio>`:''}<small>${fmtMB(a.tamanho)} · ${EXU.NOME_DEST[a.destino||'']}</small><button type="button" data-rm="${i}" aria-label="Remover">×</button></li>`).join('');
 }
 $('#lista').onclick = e => { const b = e.target.closest('[data-rm]'); if (b){ arquivos.splice(+b.dataset.rm, 1); renderArquivos(); } };
 const drop = $('#drop');
 drop.onclick = () => $('#arq').click();
 $('#foto').onclick = () => $('#cam').click();
-[$('#arq'), $('#cam')].forEach(inp => inp.onchange = e => { [...e.target.files].forEach(f => addArquivo(f.name, f.type, f)); e.target.value = ''; });
+$('#pastaTomo').onclick = () => $('#tomo').click();
+[$('#arq'), $('#cam'), $('#tomo')].forEach(inp => inp.onchange = async e => { await addFonte(e.target.files); e.target.value = ''; });
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
-drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); [...e.dataTransfer.files].forEach(f => addArquivo(f.name, f.type, f)); };
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addFonte(e.dataTransfer); };
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); if (!e.target.closest('#drop')) addFonte(e.dataTransfer); });
 
 /* gravador de áudio */
 let rec = null, partes = [], t0 = 0, timer = null;
@@ -322,20 +328,21 @@ async function enviar(){
     let r;
     if (API_URL) r = await api('pedido', {pedido:p});
     else { await new Promise(x => setTimeout(x, 600)); r = {id:'EX-00099', token:'demo', linkAcompanhar:'https://exemplo.github.io/pedidos/acompanhar.html?os=EX-00099&k=demo'}; }
-    for (let i = 0; i < arquivos.length; i++){
-      const a = arquivos[i];
-      $('#ov-t').textContent = `Enviando arquivos (${i+1} de ${arquivos.length})`; $('#ov-s').textContent = a.nome;
-      pb.style.width = `${10 + 90*i/arquivos.length}%`;
-      try { if (API_URL) await api('upload', {id:r.id, token:r.token, arquivo:a.nome, mime:a.mime, base64:await b64(a.blob)}); else await new Promise(x => setTimeout(x, 300)); }
-      catch(err){ falhas.push(a.nome); }
-    }
     pb.style.width = '100%';
     ov.hidden = true; $('#f').hidden = true; $('#ok').hidden = false;
     $('#ok-num').textContent = r.id;
     $('#ok-link').textContent = r.linkAcompanhar || 'O laboratório vai te mandar o link de acompanhamento pelo WhatsApp.';
     $('#copiar').hidden = !r.linkAcompanhar;
     $('#copiar').onclick = async () => { try { await navigator.clipboard.writeText(r.linkAcompanhar); $('#copiar').textContent = 'Copiado!'; } catch(e){} };
-    $('#ok-aviso').textContent = falhas.length ? `Não conseguimos enviar: ${falhas.join(', ')}. Mande pelo WhatsApp informando o número ${r.id}.` : '';
+    if (arquivos.length && API_URL) {
+      $('#ok-aviso').style.color = 'var(--navy)';
+      $('#ok-aviso').textContent = `Enviando ${arquivos.length} arquivo(s)… acompanhe no canto da tela e não feche esta página até terminar.`;
+      EXU.enviar(arquivos, {api, id:r.id, token:r.token, paciente:p.paciente, origemEnvio:'formulario'}).then(res => {
+        falhas.push(...res.filter(x => !x.ok).map(x => x.nome));
+        $('#ok-aviso').style.color = falhas.length ? 'var(--red)' : 'var(--navy)';
+        $('#ok-aviso').textContent = falhas.length ? `Não conseguimos enviar: ${falhas.join(', ')}. Você pode reenviar pelo link de acompanhamento acima.` : 'Todos os arquivos foram enviados ✓';
+      });
+    } else $('#ok-aviso').textContent = '';
     window.scrollTo({top:0, behavior:'smooth'});
   } catch(err){ ov.hidden = true; $('#erro').textContent = 'Não foi possível enviar: ' + err.message + '. Tente de novo.'; }
 }
