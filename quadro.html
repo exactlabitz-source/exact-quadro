@@ -212,6 +212,14 @@ body.arrastando,body.arrastando *{cursor:grabbing!important}
 .arq{display:flex;gap:8px;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #eef1f5}
 .arq a{color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq a:hover{color:var(--teal)}
 .arq span{color:var(--mut);white-space:nowrap;font-size:12px}
+.capa{position:relative;margin:-10px -11px 9px;height:118px;background:#e3e8f2;border-radius:var(--r) var(--r) 0 0;overflow:hidden}
+.capa img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.capa span{position:absolute;right:7px;bottom:7px;background:rgba(0,32,91,.82);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+.ent-card .capa{margin:-14px -16px 12px;height:170px;border-radius:12px 12px 0 0}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:6px 0 8px}
+.thumbs a{position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#e3e8f2}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs a.vid::after{content:"▶";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 .card.solta,.ent-card.solta{box-shadow:0 0 0 3px var(--teal);transform:scale(1.02)}
 .dados{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0;background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:14px}
 .dados .full{grid-column:1/-1}
@@ -315,7 +323,7 @@ details.serv label input{width:auto}
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // cole aqui a URL do Apps Script implantado (termina em /exec)
 
 /* ===== ESTADO ===== */
-const S = {user:null, quadros:[], casos:[], grupos:[], etiquetas:[], filtroLbl:'', filtroOrig:'', perfil:'', equipe:[], atual:null, busca:'', urlAcomp:'', msgWhats:'', autoWhats:false, view:'quadro', rel:null};
+const S = {capas:{}, user:null, quadros:[], casos:[], grupos:[], etiquetas:[], filtroLbl:'', filtroOrig:'', perfil:'', equipe:[], atual:null, busca:'', urlAcomp:'', msgWhats:'', autoWhats:false, view:'quadro', rel:null};
 const DIA = 864e5;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -391,6 +399,7 @@ async function carregar(silencioso){
   if (antes === null && n > 0) S.view = 'entrada';                 // ao abrir, mostra os casos novos primeiro
   if (silencioso && antes !== null && n > antes) toast(`${n - antes} caso(s) novo(s) chegaram na Entrada`, false, 'Ver', () => { S.view = 'entrada'; render(); });
   document.title = (n ? `(${n}) ` : '') + 'Exact · Quadro de Casos';
+  carregarCapas();
   if (silencioso && (!$('#modal').hidden || DR.st)) { renderTabs(); return; }
   render();
 }
@@ -440,10 +449,26 @@ function renderTabs(){
   }).join('') + (S.perfil==='admin' && S.view==='quadro' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
 }
 
+function capaHTML(c){
+  if (!c.capa) return '';
+  const src = S.capas[c.capa];
+  return `<div class="capa">${src ? `<img src="${src}" alt="">` : ''}${Number(c.fotos) > 1 ? `<span>📷 ${Number(c.fotos)}</span>` : ''}</div>`;
+}
+let buscandoCapas = false;
+async function carregarCapas(){
+  if (!API_URL || buscandoCapas) return;
+  const faltam = [...new Set(S.casos.filter(c => c.capa && !S.capas[c.capa]).map(c => c.capa))].slice(0, 80);
+  if (!faltam.length) return;
+  buscandoCapas = true;
+  try { const r = await api('capas', {chaves: faltam}); Object.assign(S.capas, r.capas || {}); if (!DR.st) render(); }
+  catch(e){} finally { buscandoCapas = false; }
+}
+
 function cardHTML(c){
   const d = dias(c.colunaDesde), cls = d>=7?'r':d>=3?'a':'';
   const atrasado = c.prazo && c.prazo < hojeISO() && !ehUltima(c);
   return `<article class="card ${cls} ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
+    ${capaHTML(c)}
     <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${cls}" title="Dias nesta coluna">${d===0?'hoje':d+'d'}</span></div>
     ${origemHTML(c)}
     ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
@@ -480,6 +505,7 @@ function renderEntrada(){
     </div>
     ${lista.length ? `<div class="ent-grid">${lista.map(c => `
       <article class="ent-card ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
+        ${capaHTML(c)}
         <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${dias(c.criadoEm)>=1?'a':''}">chegou ${haQuanto(c.criadoEm)}</span></div>
         ${origemHTML(c)}
         ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
@@ -664,7 +690,8 @@ function enviarParaCaso(c, fonte){
   EXU.coletar(fonte).then(itens => {
     if (!itens.length) return;
     EXU.enviar(itens, {api, id:c.id, paciente:c.paciente, aoConcluir: () => {
-      c.anexos = String((Number(c.anexos)||0) + 1); if (S.view === 'quadro') renderBoard();
+      c.anexos = String((Number(c.anexos)||0) + 1);
+      carregar(true).catch(() => {});
       if (!$('#modal').hidden && $('#m-drop')?.dataset.id === c.id) listarArquivos(c);
     }});
     toast(`${itens.length} envio(s) para ${c.paciente} — acompanhe no canto da tela`);
@@ -676,7 +703,8 @@ async function listarArquivos(c){
     const r = await api('arquivos', {id:c.id});
     const gs = (r.grupos||[]).filter(g => g.arquivos.length);
     box.innerHTML = gs.length ? gs.map(g => `<div class="arq-g"><h5>${esc(g.pasta)} (${g.arquivos.length})<a href="${esc(g.url)}" target="_blank" rel="noopener">abrir pasta</a></h5>
-      ${g.arquivos.map(a => `<div class="arq"><a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}">${esc(a.nome)}</a><span>${window.EXU?EXU.mb(a.tamanho):''} · ${fmtDH(a.quando)}</span></div>`).join('')}</div>`).join('')
+      ${g.arquivos.some(a => a.mini) ? `<div class="thumbs">${g.arquivos.filter(a => a.mini).map(a => `<a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}" class="${a.video?'vid':''}"><img src="${esc(a.mini)}" alt="${esc(a.nome)}" loading="lazy"></a>`).join('')}</div>` : ''}
+      ${g.arquivos.filter(a => !a.mini).map(a => `<div class="arq"><a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}">${esc(a.nome)}</a><span>${window.EXU?EXU.mb(a.tamanho):''} · ${fmtDH(a.quando)}</span></div>`).join('')}</div>`).join('')
       : '<p class="muted" style="margin:8px 0 0">Nenhum arquivo ainda.</p>';
   } catch(e){ box.innerHTML = `<p class="muted" style="margin:8px 0 0">${esc(e.message)}</p>`; }
 }

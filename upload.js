@@ -212,6 +212,33 @@
     return enviado;
   }
 
+  // miniatura (capa do cartão) feita no próprio navegador: foto reduzida ou um quadro do vídeo
+  async function gerarMini(file) {
+    try {
+      const t = file.type || '';
+      let fonte, w, h, url;
+      if (t.startsWith('image/')) {
+        try { fonte = await createImageBitmap(file); w = fonte.width; h = fonte.height; }
+        catch (e) { url = URL.createObjectURL(file); fonte = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; }); w = fonte.naturalWidth; h = fonte.naturalHeight; }
+      } else if (t.startsWith('video/')) {
+        url = URL.createObjectURL(file);
+        const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+        await new Promise((ok, no) => { v.onloadeddata = ok; v.onerror = no; setTimeout(no, 8000); });
+        v.currentTime = Math.min(1, (v.duration || 2) / 2);
+        await new Promise((ok) => { v.onseeked = ok; setTimeout(ok, 3000); });
+        fonte = v; w = v.videoWidth; h = v.videoHeight;
+      } else return '';
+      if (!w || !h) return '';
+      const k = Math.min(1, 360 / Math.max(w, h)), cv = document.createElement('canvas');
+      cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      cv.getContext('2d').drawImage(fonte, 0, 0, cv.width, cv.height);
+      if (url) URL.revokeObjectURL(url);
+      let d = cv.toDataURL('image/jpeg', 0.72);
+      if (d.length > 44000) d = cv.toDataURL('image/jpeg', 0.5);
+      return d.length < 48000 ? d : '';
+    } catch (e) { return ''; }
+  }
+
   let corrente = Promise.resolve();
   function enviar(itens, ctx) {
     const limpo = s => String(s || '').replace(/[\\/:*?"<>|]+/g, '-').trim();
@@ -224,7 +251,8 @@
           let tamanhoFinal = item.tamanho;
           if (item.tipo === 'zip') tamanhoFinal = await enviarZip(ctx, item, ui, nome);
           else await enviarArquivo(ctx, item, ui);
-          await ctx.api('upConcluir', { id: ctx.id, token: ctx.token, origemEnvio: ctx.origemEnvio, arquivo: nome, destino: item.destino, tamanho: tamanhoFinal });
+          const miniatura = item.tipo === 'arquivo' && item.file ? await gerarMini(item.file) : '';
+          await ctx.api('upConcluir', { id: ctx.id, token: ctx.token, origemEnvio: ctx.origemEnvio, arquivo: nome, destino: item.destino, tamanho: tamanhoFinal, miniatura });
           ui.ok();
           if (ctx.aoConcluir) try { ctx.aoConcluir(item, nome); } catch (e) {}
           return { nome, ok: true };
@@ -238,5 +266,5 @@
     return Promise.all(tarefas);
   }
 
-  window.EXU = { coletar, enviar, destinoDe, NOME_DEST, mb, emAndamento: () => ativos > 0 };
+  window.EXU = { coletar, enviar, destinoDe, NOME_DEST, mb, gerarMini, emAndamento: () => ativos > 0 };
 })();
