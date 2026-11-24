@@ -123,6 +123,15 @@ h1,h2,h3,h4,.tab,.btn,.kpi b{font-family:Montserrat,"Segoe UI",system-ui,sans-se
 .tab-entrada.tem{background:var(--teal);color:#fff;box-shadow:0 4px 14px rgba(222,39,119,.35)}
 .tab-entrada.tem b{background:#ffd23f;color:#3d2c00;font-size:15px;animation:pulsar 1.6s ease-in-out infinite}
 .tab-entrada.on{outline:3px solid rgba(222,39,119,.25);outline-offset:2px}
+@keyframes novoPulso{0%,100%{box-shadow:var(--sh),0 0 0 0 rgba(230,0,126,.55)}50%{box-shadow:var(--sh),0 0 0 6px rgba(230,0,126,0)}}
+.card.tem-novo,.ent-card.tem-novo{outline:2px solid #e6007e;outline-offset:-2px;animation:novoPulso 2s ease-in-out infinite}
+.novo-arq{background:#e6007e;color:#fff;font-weight:700;font-size:12px;border-radius:6px;padding:4px 8px;margin:0 0 8px;display:inline-block}
+.tab-novo{font-style:normal;margin-left:6px;background:#e6007e;color:#fff;border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:700}
+.m-novo{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#fdeaf4;border:1px solid #f4a6cf;color:#7a0042;border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:13.5px}
+.m-novo .btn{flex:none}
+.tag-novo{font-style:normal;background:#e6007e;color:#fff;font-size:10.5px;font-weight:800;border-radius:4px;padding:1px 5px;margin-right:6px}
+.arq.novo{background:#fdeaf4;border-radius:6px}
+.thumbs a.novo{outline:3px solid #e6007e;outline-offset:-3px}
 @keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(255,210,63,.75)}50%{box-shadow:0 0 0 7px rgba(255,210,63,0)}}
 #entrada{flex:1;overflow-y:auto;padding:18px 16px}
 .ent-head h2{margin:0;font-size:20px;color:var(--navy)}
@@ -389,6 +398,11 @@ const ENTRADA = 'Entrada dos Casos';          // quadro que funciona como caixa 
 const ehEntrada = nome => nome === ENTRADA;
 const naEntrada = () => S.casos.filter(c => ehEntrada(c.quadro));
 const quadrosTrabalho = () => S.quadros.filter(q => !ehEntrada(q.nome));
+const nNovos = c => Number(c.novosArquivos) || 0;
+function novoHTML(c){
+  const n = nNovos(c); if (!n) return '';
+  return `<div class="novo-arq" title="O dentista mandou ${n} arquivo(s) depois do pedido · desde ${fmtDH(Number(c.novosDesde))}">📎 ${n} arquivo${n>1?'s':''} novo${n>1?'s':''} do dentista</div>`;
+}
 function haQuanto(iso){
   const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 6e4));
   if (m < 1) return 'agora'; if (m < 60) return `há ${m} min`;
@@ -449,11 +463,12 @@ function renderTabs(){
   const nE = naEntrada().filter(bate).length;
   const btnE = `<button class="tab-entrada ${S.view==='entrada'?'on':''} ${nE?'tem':''}" id="b-entrada" title="Casos novos aguardando distribuição">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.5-6.9A2 2 0 0016.7 4H7.3a2 2 0 00-1.8 1.1z"/></svg>
-    Entrada de casos <b>${nE}</b></button><span class="tab-sep"></span>`;
+    Entrada de casos <b>${nE}</b>${naEntrada().filter(nNovos).length?`<i class="tab-novo">📎${naEntrada().filter(nNovos).length}</i>`:''}</button><span class="tab-sep"></span>`;
   $('#tabs').innerHTML = btnE + quadrosTrabalho().map(q => {
     const todos = S.casos.filter(c => c.quadro === q.nome);
     const n = (S.busca || S.filtroLbl || S.filtroOrig) ? todos.filter(bate).length : todos.length;
-    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl||S.filtroOrig)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span></button>`;
+    const nv = todos.filter(nNovos).length;
+    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl||S.filtroOrig)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span>${nv?`<i class="tab-novo" title="${nv} cartão(ões) com arquivo novo do dentista">📎${nv}</i>`:''}</button>`;
   }).join('') + (S.perfil==='admin' && S.view==='quadro' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
 }
 
@@ -475,8 +490,9 @@ async function carregarCapas(){
 function cardHTML(c){
   const d = dias(c.colunaDesde), cls = d>=7?'r':d>=3?'a':'';
   const atrasado = c.prazo && c.prazo < hojeISO() && !ehUltima(c);
-  return `<article class="card ${cls} ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
+  return `<article class="card ${cls} ${origemTipo(c)?'o-'+origemTipo(c):''} ${nNovos(c)?'tem-novo':''}" data-id="${esc(c.id)}">
     ${capaHTML(c)}
+    ${novoHTML(c)}
     <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${cls}" title="Dias nesta coluna">${d===0?'hoje':d+'d'}</span></div>
     ${origemHTML(c)}
     ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
@@ -513,8 +529,9 @@ function renderEntrada(){
       <p>${lista.length ? `<b>${lista.length}</b> caso${lista.length>1?'s':''} aguardando distribuição · os mais antigos primeiro` : 'Tudo distribuído.'}</p></div>
     </div>
     ${lista.length ? `<div class="ent-grid">${lista.map(c => `
-      <article class="ent-card ${origemTipo(c)?'o-'+origemTipo(c):''}" data-id="${esc(c.id)}">
+      <article class="ent-card ${origemTipo(c)?'o-'+origemTipo(c):''} ${nNovos(c)?'tem-novo':''}" data-id="${esc(c.id)}">
         ${capaHTML(c)}
+        ${novoHTML(c)}
         <div class="c-top"><span class="os">${esc(c.id)}</span><span class="age ${dias(c.criadoEm)>=1?'a':''}">chegou ${haQuanto(c.criadoEm)}</span></div>
         ${origemHTML(c)}
         ${lblsDe(c).length ? `<div class="lbls">${lblsDe(c).map(n=>lblHTML(n)).join('')}</div>` : ''}
@@ -760,9 +777,12 @@ async function listarArquivos(c){
   try {
     const r = await api('arquivos', {id:c.id});
     const gs = (r.grupos||[]).filter(g => g.arquivos.length);
+    const desde = nNovos(c) ? Number(c.novosDesde) - 60000 : Infinity;
+    const ehNovo = a => new Date(a.quando).getTime() >= desde;
+    const tagN = a => ehNovo(a) ? '<em class="tag-novo">NOVO</em>' : '';
     box.innerHTML = gs.length ? gs.map(g => `<div class="arq-g"><h5>${esc(g.pasta)} (${g.arquivos.length})<a href="${esc(g.url)}" target="_blank" rel="noopener">abrir pasta</a></h5>
-      ${g.arquivos.some(a => a.mini) ? `<div class="thumbs">${g.arquivos.filter(a => a.mini).map(a => `<a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}" class="${a.video?'vid':''}"><img src="${esc(a.mini)}" alt="${esc(a.nome)}" loading="lazy"></a>`).join('')}</div>` : ''}
-      ${g.arquivos.filter(a => !a.mini).map(a => `<div class="arq"><a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}">${esc(a.nome)}</a><span>${window.EXU?EXU.mb(a.tamanho):''} · ${fmtDH(a.quando)}</span></div>`).join('')}</div>`).join('')
+      ${g.arquivos.some(a => a.mini) ? `<div class="thumbs">${g.arquivos.filter(a => a.mini).map(a => `<a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}" class="${a.video?'vid':''} ${ehNovo(a)?'novo':''}"><img src="${esc(a.mini)}" alt="${esc(a.nome)}" loading="lazy"></a>`).join('')}</div>` : ''}
+      ${g.arquivos.filter(a => !a.mini).map(a => `<div class="arq ${ehNovo(a)?'novo':''}">${tagN(a)}<a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nome)}">${esc(a.nome)}</a><span>${window.EXU?EXU.mb(a.tamanho):''} · ${fmtDH(a.quando)}</span></div>`).join('')}</div>`).join('')
       : '<p class="muted" style="margin:8px 0 0">Nenhum arquivo ainda.</p>';
   } catch(e){ box.innerHTML = `<p class="muted" style="margin:8px 0 0">${esc(e.message)}</p>`; }
 }
@@ -776,6 +796,12 @@ function arquivosCaso(c){
   $('#m-escpasta').onclick = e => { e.stopPropagation(); $('#m-inpasta').click(); };
   $('#m-inarq').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
   $('#m-inpasta').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
+  const bv = $('#m-visto');
+  if (bv) bv.onclick = async () => {
+    bv.disabled = true; bv.textContent = 'Salvando…';
+    try { await api('visto', {id:c.id}); c.novosArquivos = ''; c.novosDesde = ''; $('#m-novo').remove(); document.querySelectorAll('#m-arqs .tag-novo').forEach(x => x.remove()); document.querySelectorAll('#m-arqs .novo').forEach(x => x.classList.remove('novo')); render(); toast('Arquivos marcados como vistos'); }
+    catch(e){ toast(e.message, true); bv.disabled = false; bv.textContent = '✓ Marcar como visto'; }
+  };
   if (API_URL) listarArquivos(c); else $('#m-arqs').innerHTML = '<p class="muted" style="margin:8px 0 0">No modo demonstração não há arquivos.</p>';
 }
 // soltar arquivos direto em cima de um cartão do quadro ou da Entrada
@@ -838,6 +864,7 @@ function abrirCaso(id){
         </div>
       </div>
       <div class="sec"><div class="sec-h"><h4>Arquivos do caso</h4>${c.pastaUrl?`<a class="btn sm" href="${esc(c.pastaUrl)}" target="_blank" rel="noopener">Abrir no Drive</a>`:''}</div>
+        ${nNovos(c) ? `<div class="m-novo" id="m-novo"><span>📎 <b>O dentista mandou ${nNovos(c)} arquivo${nNovos(c)>1?'s':''} novo${nNovos(c)>1?'s':''}</b> depois do pedido (desde ${fmtDH(Number(c.novosDesde))}). Eles estão marcados como <i>NOVO</i> na lista abaixo.</span><button type="button" class="btn sm pri" id="m-visto">✓ Marcar como visto</button></div>` : ''}
         <div class="drop" id="m-drop">
           <b>Arraste aqui fotos, STL, tomografia ou qualquer arquivo</b>
           <small>A pasta da tomografia (CD/pendrive) vira um .zip na pasta DICOM · STL vai para STL · fotos e vídeos para Fotos</small>
@@ -1093,7 +1120,7 @@ function renderRel(){
   const ativ = (R.atividades||[]).filter(a => noPer(a.quando) && a.usuario !== 'Formulário' && a.acao !== 'Entrou no quadro');
   const pessoas = [...new Set((R.atividades||[]).map(a=>a.usuario).filter(u => u && u!=='Formulário'))].sort();
   const ativF = ativ.filter(a => !RF.pessoa || a.usuario === RF.pessoa).sort((a,b)=> a.quando < b.quando ? 1 : -1);
-  const tiposA = ['Criou cartão','Moveu','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
+  const tiposA = ['Criou cartão','Moveu','Viu arquivos novos','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
   const porPessoa = {}; ativ.forEach(a => { (porPessoa[a.usuario] ||= {}); porPessoa[a.usuario][a.acao] = (porPessoa[a.usuario][a.acao]||0)+1; });
   const ultAcesso = {}; (R.atividades||[]).forEach(a => { if (a.acao==='Entrou no quadro' && (!ultAcesso[a.usuario] || a.quando > ultAcesso[a.usuario])) ultAcesso[a.usuario] = a.quando; });
   const movs = contar(R.historico.filter(h => h.usuario && h.usuario!=='Formulário' && noPer(h.quando) && (!RF.quadro || h.paraQuadro===RF.quadro)), h => h.usuario);
@@ -1260,6 +1287,7 @@ async function demoApi(acao, d){
     case 'renomearColuna': { const q = D.quadros.find(x => x.nome === d.quadro); if (q.colunas.some(x => x.nome === d.para)) throw new Error('Já existe uma coluna com esse nome neste quadro');
       const col = q.colunas.find(x => x.nome === d.de); if (col.publico === d.de) col.publico = d.para; col.nome = d.para;
       D.casos.forEach(c => { if (c.quadro === d.quadro && c.coluna === d.de) c.coluna = d.para; }); return {ok:true, quadros:D.quadros}; }
+    case 'visto': { const c = D.casos.find(x => x.id === d.id); if (c) { c.novosArquivos = ''; c.novosDesde = ''; } return {ok:true}; }
     case 'criar': { const agora = new Date().toISOString(), id = 'EX-' + String(D.casos.length + 100).padStart(5,'0');
       D.casos.push({id, criadoEm:agora, quadro:d.quadro, coluna:d.coluna, colunaDesde:agora, status:'ativo', paciente:d.dados.paciente, dentista:d.dados.dentista||'', servico:d.dados.servico||'', origem:d.dados.origem||'', posicao:String(Date.now()), anexos:'0', etiquetas:'', token:'demo'});
       return {ok:true, id}; }
