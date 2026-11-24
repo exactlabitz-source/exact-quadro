@@ -299,6 +299,21 @@ details.serv label input{width:auto}
   .rgrid{grid-template-columns:1fr}
   .movebox{grid-template-columns:1fr}
 }
+
+/* fundo azul suave com os números binários (igual ao login, mais claro) */
+#app{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='%23ffffff' fill-opacity='.06' font-family='monospace' font-size='15'%3E%3Ctext x='4' y='18'%3E0 1 1 0 1 0 0 1 1 0 1%3C/text%3E%3Ctext x='4' y='48'%3E1 0 0 1 0 1 1 0 0 1 0%3C/text%3E%3Ctext x='4' y='78'%3E0 0 1 1 0 1 0 1 1 0 0%3C/text%3E%3Ctext x='4' y='108'%3E1 1 0 0 1 0 1 0 0 1 1%3C/text%3E%3C/g%3E%3C/svg%3E"),linear-gradient(160deg,#2c5c9e 0%,#21508f 55%,#1c4682 100%);background-attachment:fixed}
+.tabs{background:rgba(0,26,72,.28);border-bottom:1px solid rgba(255,255,255,.10)}
+.tab{background:rgba(255,255,255,.92);border-color:transparent}
+.tab:hover{border-color:#fff}
+.tab.on{background:var(--navy);border-color:#ffffff55}
+.col{background:rgba(233,239,246,.94)}
+.ent-head h2{color:#fff}
+.ent-head p{color:#d5e1f2}
+.ent-head p b{color:#ffd0e5}
+.ent-vazio{color:#d5e1f2}
+.ent-vazio b{color:#fff}
+.ent-vazio svg{background:rgba(255,255,255,.9)}
+.tab-sep{background:rgba(255,255,255,.25)}
 </style>
 </head>
 <body>
@@ -519,7 +534,7 @@ async function carregar(silencioso){
   if (!quadrosTrabalho().some(q => q.nome === S.atual)) S.atual = (quadrosTrabalho()[0]||{}).nome;
   const n = naEntrada().length;
   S.carregado = true;
-  if (antes === null && n > 0) S.view = 'entrada';                 // ao abrir, mostra os casos novos primeiro
+  if (antes === null) S.view = 'entrada';                          // ao abrir, sempre começa pela Entrada de casos
   if (silencioso && antes !== null && n > antes) toast(`${n - antes} caso(s) novo(s) chegaram na Entrada`, false, 'Ver', () => { S.view = 'entrada'; render(); });
   document.title = (n ? `(${n}) ` : '') + 'Exact · Quadro de Casos';
   carregarCapas();
