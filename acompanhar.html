@@ -96,7 +96,7 @@ const fmtD = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') ? s.split('-').reverse().joi
       <span id="rec-t"></span>
       <div class="drop" id="drop"><b><span class="so-pc">Arraste os arquivos aqui ou clique para escolher</span><span class="so-tel">Outros arquivos (STL, PDF, .zip…)</span></b><small class="so-pc">A pasta inteira da tomografia (CD/pendrive) é compactada e enviada sozinha</small>
         <div class="bts"><button type="button" id="b-arq">Escolher arquivos</button><button type="button" id="b-pasta" class="so-pc">Pasta da tomografia</button></div></div>
-      <p class="so-tel" style="font-size:13px;color:var(--mut);margin:10px 2px 0">📱 Vídeos grandes podem levar alguns minutos: deixe esta tela aberta até aparecer “recebido pelo laboratório”.</p>
+      <p class="so-tel" style="font-size:13px;color:var(--mut);margin:10px 2px 0">📱 Vídeos grandes podem levar alguns minutos: deixe esta tela aberta até aparecer “recebido pelo laboratório”.<br>STL que chegou pelo WhatsApp? Abra o arquivo no WhatsApp, toque em <b>Compartilhar</b> → <b>Salvar em Arquivos</b> (iPhone) ou <b>Salvar/Baixar</b> (Android) e depois toque em <b>Escolher arquivos</b>.</p>
       <input type="file" id="in-arq" multiple hidden><input type="file" id="in-pasta" webkitdirectory hidden><input type="file" id="in-foto" accept="image/*" capture="environment" hidden>
       <input type="file" id="in-video" accept="video/*" capture="environment" hidden><input type="file" id="in-gal" accept="image/*,video/*" multiple hidden>
       <ul id="env"></ul>

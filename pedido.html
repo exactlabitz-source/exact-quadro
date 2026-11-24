@@ -70,6 +70,8 @@ input:focus,textarea:focus,select:focus{outline:3px solid rgba(222,39,119,.18);b
 .so-pc{}
 @media (pointer:coarse){ .so-pc{display:none!important} .so-tel{display:inline} }
 @media (pointer:fine){ .so-tel{display:none} }
+.so-telb{display:none!important}
+@media (pointer:coarse){ .so-telb{display:block!important} }
 .aviso-tel{display:none;background:#fff7e0;border:1px solid #f3d27a;color:#7a5600;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
 @media (pointer:coarse){ .aviso-tel{display:block} }
 .erro{color:var(--red);font-weight:700;text-align:center;min-height:22px;margin:0 0 12px}
@@ -172,12 +174,13 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
   <section class="box"><span class="t">Imagens, vídeos, áudios e arquivos do caso</span>
     <div class="drop" id="drop"><span><span class="so-pc">Arraste ou escolha os arquivos</span><span class="so-tel">Escolher arquivos do celular</span><br><small style="color:var(--mut)">Fotos, vídeos, áudios, STL/PLY/OBJ, tomografia (pasta do CD ou .zip), PDF · sem limite de tamanho</small></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
-    <input type="file" id="arq" multiple hidden accept="image/*,video/*,audio/*,.stl,.ply,.obj,.zip,.rar,.pdf,.dcm">
+    <input type="file" id="arq" multiple hidden>
     <div class="cap">
       <button type="button" class="btn" id="foto">📷 Tirar foto</button>
       <button type="button" class="btn" id="filmar">🎥 Gravar vídeo</button>
       <button type="button" class="btn" id="galeria">🖼️ Galeria</button>
       <button type="button" class="btn rec" id="rec">🎙 Gravar áudio</button>
+      <button type="button" class="btn so-telb" id="outros" style="grid-column:1/-1">📁 STL, PDF e outros arquivos</button>
       <button type="button" class="btn so-pc" id="pastaTomo" style="grid-column:1/-1">💿 Enviar pasta da tomografia</button>
     </div>
     <span id="rec-t" class="sel"></span>
@@ -187,7 +190,8 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
     <input type="file" id="tomo" webkitdirectory hidden>
     <ul class="files" id="lista"></ul>
     <p class="dica so-pc">No computador, pode arrastar a pasta inteira da tomografia (CD/pendrive): ela é compactada e enviada sozinha. Arquivos grandes podem levar alguns minutos — não feche a página até terminar.</p>
-    <div class="aviso-tel">📱 Vídeos grandes podem levar alguns minutos. Depois de tocar em <b>Enviar</b>, deixe esta tela aberta até aparecer “Todos os arquivos foram enviados”.</div>
+    <div class="aviso-tel">📱 Vídeos grandes podem levar alguns minutos. Depois de tocar em <b>Enviar</b>, deixe esta tela aberta até aparecer “Todos os arquivos foram enviados”.
+      <strong style="display:block;margin-top:8px">STL que chegou pelo WhatsApp?</strong>Abra o arquivo no WhatsApp e toque em <b>Compartilhar</b> → <b>Salvar em Arquivos</b> (iPhone) ou <b>Salvar/Baixar</b> (Android). Depois toque em <b>📁 STL, PDF e outros arquivos</b> aqui em cima e escolha o arquivo (no iPhone: <b>Escolher Arquivo</b>; no Android: <b>Arquivos/Downloads</b>).</div>
   </section>
 
   <div class="erro" id="erro"></div>
@@ -307,6 +311,7 @@ drop.onclick = () => $('#arq').click();
 $('#foto').onclick = () => $('#cam').click();
 $('#filmar').onclick = () => $('#vid').click();
 $('#galeria').onclick = () => $('#gal').click();
+$('#outros').onclick = () => $('#arq').click();
 $('#pastaTomo').onclick = () => $('#tomo').click();
 [$('#arq'), $('#cam'), $('#tomo'), $('#vid'), $('#gal')].forEach(inp => inp.onchange = async e => { await addFonte(e.target.files); e.target.value = ''; });
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
