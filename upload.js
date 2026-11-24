@@ -106,9 +106,19 @@
       erro: t => { li.className = 'err'; li.querySelector('.s').textContent = 'falhou'; li.querySelector('.d').textContent = t; }
     };
   }
+  // mantém a tela do celular acesa durante o envio (se o navegador permitir)
+  let trava = null;
+  async function manterTela(on) {
+    try {
+      if (on && !trava && navigator.wakeLock) { trava = await navigator.wakeLock.request('screen'); trava.addEventListener('release', () => { trava = null; }); }
+      if (!on && trava) { await trava.release(); trava = null; }
+    } catch (e) { trava = null; }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ativos > 0) manterTela(true); });
   function atualizarTitulo() {
+    manterTela(ativos > 0);
     if (!painel) return;
-    titulo.textContent = ativos > 0 ? `Enviando arquivos (${ativos} na fila) — não feche a página` : 'Envio concluído';
+    titulo.textContent = ativos > 0 ? `Enviando (${ativos} na fila) — deixe esta tela aberta` : 'Envio concluído ✓';
     painel.querySelector('#exu-x').hidden = ativos > 0;
   }
 

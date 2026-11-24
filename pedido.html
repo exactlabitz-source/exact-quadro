@@ -64,6 +64,14 @@ input:focus,textarea:focus,select:focus{outline:3px solid rgba(222,39,119,.18);b
 .files li small{color:var(--mut)}
 .files li button{border:0;background:none;color:var(--red);font-size:19px;cursor:pointer}
 .files li audio{height:30px;max-width:180px}
+.files li img.th,.files li video.th{width:44px;height:44px;object-fit:cover;border-radius:7px;flex:none;background:#e3e8f2}
+.cap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 6px}
+.cap .btn{padding:12px 10px;font-size:14.5px;border-radius:12px;justify-content:center;text-align:center}
+.so-pc{}
+@media (pointer:coarse){ .so-pc{display:none!important} .so-tel{display:inline} }
+@media (pointer:fine){ .so-tel{display:none} }
+.aviso-tel{display:none;background:#fff7e0;border:1px solid #f3d27a;color:#7a5600;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+@media (pointer:coarse){ .aviso-tel{display:block} }
 .erro{color:var(--red);font-weight:700;text-align:center;min-height:22px;margin:0 0 12px}
 .acoes{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
 .acoes .btn{padding:13px 40px;font-size:16px}
@@ -81,7 +89,10 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
   .box{padding:18px}
   .par{gap:8px}
   .arc,.odo-l{min-width:0}.arc{gap:2px}.arc .sep{width:6px}
-  .dente{width:calc((100vw - 110px)/16);height:34px;font-size:10px;border-radius:6px}
+  .odo-l{display:none}
+  .arc{flex-wrap:wrap;justify-content:space-between;gap:5px;margin:4px 0}
+  .arc .sep{flex-basis:100%;width:auto;height:4px}
+  .dente{width:calc((100% - 35px)/8);height:42px;font-size:13px;border-radius:8px}
 }
 </style>
 </head>
@@ -143,19 +154,24 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
   <section class="box"><label><span class="t">Observações sobre o trabalho:</span><textarea name="observacoes" rows="5"></textarea></label></section>
 
   <section class="box"><span class="t">Imagens, vídeos, áudios e arquivos do caso</span>
-    <div class="drop" id="drop"><span>Escolher arquivo(s)<br><small style="color:var(--mut)">Fotos, vídeos, áudios, STL/PLY/OBJ, tomografia (pasta do CD ou .zip), PDF · sem limite de tamanho</small></span>
+    <div class="drop" id="drop"><span><span class="so-pc">Arraste ou escolha os arquivos</span><span class="so-tel">Escolher arquivos do celular</span><br><small style="color:var(--mut)">Fotos, vídeos, áudios, STL/PLY/OBJ, tomografia (pasta do CD ou .zip), PDF · sem limite de tamanho</small></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
     <input type="file" id="arq" multiple hidden accept="image/*,video/*,audio/*,.stl,.ply,.obj,.zip,.rar,.pdf,.dcm">
-    <div class="quick">
-      <button type="button" class="btn sm" id="foto">📷 Tirar foto</button>
-      <button type="button" class="btn sm" id="pastaTomo">💿 Enviar pasta da tomografia</button>
-      <button type="button" class="btn sm rec" id="rec">🎙 Gravar áudio</button>
-      <span id="rec-t" class="sel" style="align-self:center"></span>
+    <div class="cap">
+      <button type="button" class="btn" id="foto">📷 Tirar foto</button>
+      <button type="button" class="btn" id="filmar">🎥 Gravar vídeo</button>
+      <button type="button" class="btn" id="galeria">🖼️ Galeria</button>
+      <button type="button" class="btn rec" id="rec">🎙 Gravar áudio</button>
+      <button type="button" class="btn so-pc" id="pastaTomo" style="grid-column:1/-1">💿 Enviar pasta da tomografia</button>
     </div>
+    <span id="rec-t" class="sel"></span>
     <input type="file" id="cam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="vid" accept="video/*" capture="environment" hidden>
+    <input type="file" id="gal" accept="image/*,video/*" multiple hidden>
     <input type="file" id="tomo" webkitdirectory hidden>
     <ul class="files" id="lista"></ul>
-    <p class="dica">Pode arrastar a pasta inteira da tomografia (CD/pendrive): ela é compactada e enviada sozinha. Arquivos grandes podem levar alguns minutos — não feche a página até terminar.</p>
+    <p class="dica so-pc">No computador, pode arrastar a pasta inteira da tomografia (CD/pendrive): ela é compactada e enviada sozinha. Arquivos grandes podem levar alguns minutos — não feche a página até terminar.</p>
+    <div class="aviso-tel">📱 Vídeos grandes podem levar alguns minutos. Depois de tocar em <b>Enviar</b>, deixe esta tela aberta até aparecer “Todos os arquivos foram enviados”.</div>
   </section>
 
   <div class="erro" id="erro"></div>
@@ -258,15 +274,25 @@ function addArquivo(nome, mime, blob){
   renderArquivos();
 }
 async function addFonte(fonte){ (await EXU.coletar(fonte)).forEach(it => arquivos.push(it)); renderArquivos(); }
+const miniatura = a => {
+  if (a.tipo !== 'arquivo' || !a.file) return '';
+  const t = a.file.type || '';
+  if (!a.th && (t.startsWith('image/') || t.startsWith('video/'))) a.th = URL.createObjectURL(a.file);
+  if (t.startsWith('image/')) return `<img class="th" src="${a.th}" alt="">`;
+  if (t.startsWith('video/')) return `<video class="th" src="${a.th}#t=0.5" muted playsinline preload="metadata"></video>`;
+  return '';
+};
 function renderArquivos(){
-  $('#lista').innerHTML = arquivos.map((a,i) => `<li><span>${a.tipo==='zip' ? `💿 Tomografia: ${esc(a.nome)} (${a.arquivos.length} arquivos)` : esc(a.nome)}</span>${a.url?`<audio controls src="${a.url}"></audio>`:''}<small>${fmtMB(a.tamanho)} · ${EXU.NOME_DEST[a.destino||'']}</small><button type="button" data-rm="${i}" aria-label="Remover">×</button></li>`).join('');
+  $('#lista').innerHTML = arquivos.map((a,i) => `<li>${miniatura(a)}<span>${a.tipo==='zip' ? `💿 Tomografia: ${esc(a.nome)} (${a.arquivos.length} arquivos)` : esc(a.nome)}</span>${a.url?`<audio controls src="${a.url}"></audio>`:''}<small>${fmtMB(a.tamanho)} · ${EXU.NOME_DEST[a.destino||'']}</small><button type="button" data-rm="${i}" aria-label="Remover">×</button></li>`).join('');
 }
 $('#lista').onclick = e => { const b = e.target.closest('[data-rm]'); if (b){ arquivos.splice(+b.dataset.rm, 1); renderArquivos(); } };
 const drop = $('#drop');
 drop.onclick = () => $('#arq').click();
 $('#foto').onclick = () => $('#cam').click();
+$('#filmar').onclick = () => $('#vid').click();
+$('#galeria').onclick = () => $('#gal').click();
 $('#pastaTomo').onclick = () => $('#tomo').click();
-[$('#arq'), $('#cam'), $('#tomo')].forEach(inp => inp.onchange = async e => { await addFonte(e.target.files); e.target.value = ''; });
+[$('#arq'), $('#cam'), $('#tomo'), $('#vid'), $('#gal')].forEach(inp => inp.onchange = async e => { await addFonte(e.target.files); e.target.value = ''; });
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addFonte(e.dataTransfer); };
