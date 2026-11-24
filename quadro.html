@@ -123,6 +123,19 @@ h1,h2,h3,h4,.tab,.btn,.kpi b{font-family:Montserrat,"Segoe UI",system-ui,sans-se
 .tab-entrada.tem{background:var(--teal);color:#fff;box-shadow:0 4px 14px rgba(222,39,119,.35)}
 .tab-entrada.tem b{background:#ffd23f;color:#3d2c00;font-size:15px;animation:pulsar 1.6s ease-in-out infinite}
 .tab-entrada.on{outline:3px solid rgba(222,39,119,.25);outline-offset:2px}
+.vtag{margin-left:auto;background:#e3f3ea;color:#11633d;font-weight:700;font-size:12px;border-radius:6px;padding:2px 7px}
+.vtag.est{background:transparent;color:var(--mut);border:1px dashed #b7c3cf;font-weight:600}
+.v-aviso{margin:4px 0 2px;font-size:12.5px;color:#7a5600;background:#fff6dc;border-radius:8px;padding:7px 10px}
+.vtot.est{background:#e9eef3;color:var(--navy)}
+.vtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+.vtab th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);text-align:left;font-weight:700;padding:4px 4px}
+.vtab td{padding:7px 4px;border-top:1px solid var(--line);vertical-align:middle}
+.vtab td small{display:block;color:var(--mut);font-size:11.5px}
+.vtab .r,.vtab th.r{text-align:right}
+.vtab.ed input{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:5px 6px}
+.vtab.ed td:nth-child(2){width:64px}.vtab.ed td:nth-child(3){width:96px}.vtab.ed td:nth-child(4){width:90px}.vtab.ed td:nth-child(5){width:34px}
+.vtot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--navy);color:#fff}
+.vtot b{font-size:18px}.vtot small{opacity:.75;font-size:11.5px;margin-left:6px}
 @keyframes novoPulso{0%,100%{box-shadow:var(--sh),0 0 0 0 rgba(230,0,126,.55)}50%{box-shadow:var(--sh),0 0 0 6px rgba(230,0,126,0)}}
 .card.tem-novo,.ent-card.tem-novo{outline:2px solid #e6007e;outline-offset:-2px;animation:novoPulso 2s ease-in-out infinite}
 .novo-arq{background:#e6007e;color:#fff;font-weight:700;font-size:12px;border-radius:6px;padding:4px 8px;margin:0 0 8px;display:inline-block}
@@ -399,6 +412,93 @@ const ehEntrada = nome => nome === ENTRADA;
 const naEntrada = () => S.casos.filter(c => ehEntrada(c.quadro));
 const quadrosTrabalho = () => S.quadros.filter(q => !ehEntrada(q.nome));
 const nNovos = c => Number(c.novosArquivos) || 0;
+const brl = n => (Number(n)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+function valorDe(c){
+  if (!c.valor) return null;
+  if (typeof c.valor === 'object') return c.valor;
+  try { return JSON.parse(c.valor); } catch(e){ return null; }
+}
+/* tabela EXACT (consultório particular) — depois vem da aba Preços da planilha */
+let PRECOS = [
+  {chave:'ExactFlex', unit:70, tipo:'dente'}, {chave:'ExactProv', unit:90, tipo:'dente'}, {chave:'ExactSmileDesign', unit:40, tipo:'dente'},
+  {chave:'ExactShell', unit:180, tipo:'fixo'}, {chave:'ExactPerio', unit:240, tipo:'fixo'}, {chave:'ExactSplint', unit:250, tipo:'fixo'},
+  {chave:'ExactGuide', unit:250, tipo:'guia', extra:50}, {chave:'Modelo de estudo', unit:50, tipo:'fixo'}, {chave:'Modelo ortodôntico', unit:70, tipo:'fixo'},
+  {chave:'ExactProtus – Maxila', unit:225, tipo:'fixo'}, {chave:'ExactProtus – Mandíbula', unit:225, tipo:'fixo'}, {chave:'ExactProtus – Região', unit:125, tipo:'fixo'}
+];
+function contarDentes(t){
+  t = String(t||''); let n = (t.match(/\b[1-4][1-8]\b/g) || []).length;
+  if (/arcada superior/i.test(t)) n += 16; if (/arcada inferior/i.test(t)) n += 16;
+  return n;
+}
+function estimarValor(c){
+  if (origemTipo(c) !== 'part') return null;
+  const servs = String(c.servico||'').split(/;\s*/).filter(Boolean), nd = contarDentes(c.dentes), itens = [], aCombinar = [];
+  servs.forEach(sv => {
+    const pr = PRECOS.find(x => sv.toLowerCase().includes(x.chave.toLowerCase()));
+    if (!pr) { aCombinar.push(sv); return; }
+    if (pr.tipo === 'dente') itens.push({servico:sv, qtd:nd, unidade:'dente', unit:pr.unit, total:nd*pr.unit});
+    else if (pr.tipo === 'guia') itens.push({servico:sv, qtd:1, unidade:'guia', unit:pr.unit, total:pr.unit + pr.extra, implantes:1, extra:pr.extra});
+    else itens.push({servico:sv, qtd:1, unidade:'un', unit:pr.unit, total:pr.unit});
+  });
+  if (!itens.length && !aCombinar.length) return null;
+  return {itens, aCombinar, desconto:0, estimado:true};
+}
+const valorOuEstimativa = c => valorDe(c) || estimarValor(c);
+function vtagHTML(c){
+  const v = valorOuEstimativa(c); if (!v) return '';
+  const t = totalValor(v);
+  if (v.estimado) return t ? `<span class="vtag est" title="Estimado pela tabela, ainda não confirmado">≈ ${brl(t)}</span>` : '';
+  return `<span class="vtag" title="Valor do caso">${brl(t)}</span>`;
+}
+function totalValor(v){ return v ? Math.max(0, v.itens.reduce((a,x) => a + (Number(x.total)||0), 0) - (Number(v.desconto)||0)) : 0; }
+const nomeServ = s => String(s).split(' – ')[0] + (/Protus|Model|Splint/.test(s) && s.includes(' – ') ? ' – ' + s.split(' – ').slice(1).join(' – ') : '');
+function valorSecHTML(c){
+  const v = valorOuEstimativa(c); if (!v && origemTipo(c) !== 'part') return '';
+  const linhas = v ? v.itens.map(it => `<tr><td>${esc(nomeServ(it.servico))}${it.unidade==='guia' && it.implantes ? `<small>guia ${brl(it.unit)} + ${it.implantes} implante(s) × ${brl(it.extra)}</small>` : ''}</td><td class="r">${it.unidade==='dente' ? `${it.qtd} dente(s)` : it.unidade==='guia' ? '1 guia' : esc(it.qtd)}</td><td class="r">${brl(it.unit)}</td><td class="r">${brl(it.total)}</td></tr>`).join('') : '';
+  const est = v && v.estimado;
+  const botoes = !v ? `<button type="button" class="btn sm" id="m-valor-ed">Lançar valor</button>`
+    : est ? `<span style="display:flex;gap:6px"><button type="button" class="btn sm" id="m-valor-ed">Editar</button><button type="button" class="btn sm pri" id="m-valor-ok">Confirmar valor</button></span>`
+    : `<button type="button" class="btn sm" id="m-valor-ed">Editar valores</button>`;
+  return `<div class="sec" id="m-valor"><div class="sec-h"><h4>Valor do caso</h4>${botoes}</div>
+    ${est ? `<p class="v-aviso">Estimado pela tabela a partir dos serviços e dentes do pedido. Confira (quantidade de dentes, implantes, desconto) e confirme.</p>` : ''}
+    ${v ? `<table class="vtab"><thead><tr><th>Serviço</th><th class="r">Qtd</th><th class="r">Unit.</th><th class="r">Total</th></tr></thead><tbody>${linhas}
+      ${(v.aCombinar||[]).map(x => `<tr><td>${esc(nomeServ(x))}</td><td class="r" colspan="3"><span class="muted">sem preço na tabela</span></td></tr>`).join('')}
+      ${Number(v.desconto) ? `<tr><td>Desconto</td><td></td><td></td><td class="r">− ${brl(v.desconto)}</td></tr>` : ''}</tbody></table>
+      <div class="vtot ${est?'est':''}"><span>${est ? 'Estimativa' : 'Total'}${!est && v.editadoPor ? ` <small>por ${esc(v.editadoPor)} · ${fmtDH(v.editadoEm)}</small>` : ''}</span><b>${brl(totalValor(v))}</b></div>`
+      : '<p class="muted" style="margin:6px 0 0">Nenhum serviço da tabela neste pedido. Toque em "Lançar valor" para preencher.</p>'}
+  </div>`;
+}
+function editarValor(c){
+  const base = valorOuEstimativa(c) || {itens:[], aCombinar:[], desconto:0};
+  const plano = base.itens.flatMap(it => it.unidade === 'guia' ? [{servico:it.servico, qtd:1, unidade:'un', unit:it.unit, total:it.unit}, {servico:'Implantes (ExactGuide)', qtd:it.implantes||0, unidade:'un', unit:it.extra, total:(it.implantes||0)*it.extra}] : [it]);
+  const v = {...base, itens:[...plano, ...(base.aCombinar||[]).map(x => ({servico:x, qtd:1, unidade:'un', unit:0, total:0}))]};
+  const box = $('#m-valor');
+  const linha = (it, i) => `<tr data-i="${i}"><td><input class="v-s" value="${esc(it.servico)}" aria-label="Serviço"></td><td><input class="v-q" type="number" min="0" step="1" value="${esc(it.unidade==='guia' ? 1 : it.qtd)}" aria-label="Quantidade"></td><td><input class="v-u" type="number" min="0" step="0.01" value="${esc(it.unidade==='guia' ? it.total : it.unit)}" aria-label="Valor unitário"></td><td class="r v-t"></td><td><button type="button" class="btn sm v-x" aria-label="Remover">×</button></td></tr>`;
+  box.innerHTML = `<div class="sec-h"><h4>Valor do caso</h4></div>
+    <table class="vtab ed"><thead><tr><th>Serviço</th><th>Qtd</th><th>Unit. (R$)</th><th class="r">Total</th><th></th></tr></thead><tbody>${v.itens.map(linha).join('')}</tbody></table>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn sm" id="v-add">+ Item</button>
+      <label style="margin-left:auto;font-size:13px">Desconto R$ <input id="v-desc" type="number" min="0" step="0.01" value="${esc(Number(v.desconto)||0)}" style="width:100px"></label></div>
+    <div class="vtot"><span>Total</span><b id="v-tot"></b></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn sm" id="v-cancel">Cancelar</button><button type="button" class="btn sm pri" id="v-salvar">Salvar valor</button></div>`;
+  const tb = box.querySelector('tbody');
+  const ler = () => [...tb.rows].map(r => { const q = Number(r.querySelector('.v-q').value)||0, u = Number(r.querySelector('.v-u').value)||0; return {servico:r.querySelector('.v-s').value.trim(), qtd:q, unidade:'un', unit:u, total:Math.round(q*u*100)/100}; }).filter(x => x.servico);
+  const soma = () => { [...tb.rows].forEach(r => r.querySelector('.v-t').textContent = brl((Number(r.querySelector('.v-q').value)||0) * (Number(r.querySelector('.v-u').value)||0))); $('#v-tot').textContent = brl(totalValor({itens:ler(), desconto:$('#v-desc').value})); };
+  box.oninput = soma; soma();
+  box.querySelector('#v-add').onclick = () => { tb.insertAdjacentHTML('beforeend', linha({servico:'', qtd:1, unit:0}, tb.rows.length)); soma(); tb.lastElementChild.querySelector('.v-s').focus(); };
+  tb.onclick = e => { if (e.target.closest('.v-x')) { e.target.closest('tr').remove(); soma(); } };
+  box.querySelector('#v-cancel').onclick = () => { box.outerHTML = valorSecHTML(c); ligarValor(c); };
+  box.querySelector('#v-salvar').onclick = () => salvarValor(c, {itens:ler(), aCombinar:[], desconto:Number($('#v-desc').value)||0}, box.querySelector('#v-salvar'));
+}
+async function salvarValor(c, novo, b){
+  novo.editadoPor = S.user?.nome || ''; novo.editadoEm = new Date().toISOString(); novo.total = totalValor(novo); delete novo.estimado;
+  if (b) { b.disabled = true; b.textContent = 'Salvando…'; }
+  try { const r = await api('valor', {id:c.id, valor:novo}); const sv = r.valor || novo; c.valor = JSON.stringify(sv); c.valorTotal = String(sv.total); $('#m-valor').outerHTML = valorSecHTML(c); ligarValor(c); render(); toast('Valor salvo'); }
+  catch(err){ toast(err.message, true); if (b) { b.disabled = false; b.textContent = 'Salvar'; } }
+}
+function ligarValor(c){
+  const b = $('#m-valor-ed'); if (b) b.onclick = () => editarValor(c);
+  const ok = $('#m-valor-ok'); if (ok) ok.onclick = () => { const e = estimarValor(c); salvarValor(c, {itens:e.itens, aCombinar:e.aCombinar, desconto:0}, ok); };
+}
 function novoHTML(c){
   const n = nNovos(c); if (!n) return '';
   return `<div class="novo-arq" title="O dentista mandou ${n} arquivo(s) depois do pedido · desde ${fmtDH(Number(c.novosDesde))}">📎 ${n} arquivo${n>1?'s':''} novo${n>1?'s':''} do dentista</div>`;
@@ -413,6 +513,7 @@ function haQuanto(iso){
 async function carregar(silencioso){
   const antes = S.carregado ? naEntrada().length : null;
   const j = await api('listar');
+  if (j.precos?.length) PRECOS = j.precos;
   Object.assign(S, {quadros:j.quadros, casos:j.casos, grupos:j.grupos||[], etiquetas:j.etiquetas||[], equipe:j.equipe||[], urlAcomp:j.urlAcomp||'', msgWhats:j.msgWhats||'', autoWhats:!!j.autoWhats, perfil:(j.usuario?.perfil||'').toLowerCase()});
   renderFiltroLbl();
   if (!quadrosTrabalho().some(q => q.nome === S.atual)) S.atual = (quadrosTrabalho()[0]||{}).nome;
@@ -504,6 +605,7 @@ function cardHTML(c){
       ${Number(c.comentarios)?`<span class="ico">${IC.com}${esc(c.comentarios)}</span>`:''}
       ${c.prazo?`<span class="ico ${atrasado?'late':''}">${IC.cal}${fmtD(c.prazo)}</span>`:''}
       ${c.responsavel?`<span class="ico">${IC.user}${esc(c.responsavel)}</span>`:''}
+      ${vtagHTML(c)}
     </div></article>`;
 }
 
@@ -539,7 +641,7 @@ function renderEntrada(){
         <div class="ent-serv">${servicosDe(c).map(x=>`<span class="tag-serv">${esc(x)}</span>`).join('')}</div>
         <div class="meta">Dr(a). ${esc(c.dentista)}${c.dentes?` · dentes ${esc(c.dentes)}`:''}</div>
         ${c.observacoes ? `<p class="ent-obs">${esc(c.observacoes.length > 140 ? c.observacoes.slice(0,140)+'…' : c.observacoes)}</p>` : ''}
-        <div class="foot">${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)} anexo(s)</span>`:''}${c.prazo?`<span class="ico">${IC.cal}prazo ${fmtD(c.prazo)}</span>`:''}<a class="ent-ver" data-abrir>Ver pedido completo</a></div>
+        <div class="foot">${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)} anexo(s)</span>`:''}${c.prazo?`<span class="ico">${IC.cal}prazo ${fmtD(c.prazo)}</span>`:''}${vtagHTML(c)}<a class="ent-ver" data-abrir>Ver pedido completo</a></div>
         <div class="ent-dest"><span>Enviar para:</span>${destinos.map(q => `<button data-dest="${esc(q.nome)}">${esc(q.nome)}</button>`).join('')}</div>
       </article>`).join('')}</div>`
     : `<div class="ent-vazio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6L9 17l-5-5"/></svg><b>Nenhum caso esperando.</b><span>Quando um dentista enviar um pedido, ele aparece aqui e o botão "Entrada de casos" acende.</span></div>`}`;
@@ -796,6 +898,7 @@ function arquivosCaso(c){
   $('#m-escpasta').onclick = e => { e.stopPropagation(); $('#m-inpasta').click(); };
   $('#m-inarq').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
   $('#m-inpasta').onchange = e => { enviarParaCaso(c, e.target.files); e.target.value = ''; };
+  ligarValor(c);
   const bv = $('#m-visto');
   if (bv) bv.onclick = async () => {
     bv.disabled = true; bv.textContent = 'Salvando…';
@@ -863,6 +966,7 @@ function abrirCaso(id){
           <div class="full" style="display:flex;gap:8px"><button class="btn pri" id="m-salvar">Salvar alterações</button><button class="btn" id="m-cancelar">Cancelar</button></div>
         </div>
       </div>
+      ${valorSecHTML(c)}
       <div class="sec"><div class="sec-h"><h4>Arquivos do caso</h4>${c.pastaUrl?`<a class="btn sm" href="${esc(c.pastaUrl)}" target="_blank" rel="noopener">Abrir no Drive</a>`:''}</div>
         ${nNovos(c) ? `<div class="m-novo" id="m-novo"><span>📎 <b>O dentista mandou ${nNovos(c)} arquivo${nNovos(c)>1?'s':''} novo${nNovos(c)>1?'s':''}</b> depois do pedido (desde ${fmtDH(Number(c.novosDesde))}). Eles estão marcados como <i>NOVO</i> na lista abaixo.</span><button type="button" class="btn sm pri" id="m-visto">✓ Marcar como visto</button></div>` : ''}
         <div class="drop" id="m-drop">
@@ -1120,7 +1224,7 @@ function renderRel(){
   const ativ = (R.atividades||[]).filter(a => noPer(a.quando) && a.usuario !== 'Formulário' && a.acao !== 'Entrou no quadro');
   const pessoas = [...new Set((R.atividades||[]).map(a=>a.usuario).filter(u => u && u!=='Formulário'))].sort();
   const ativF = ativ.filter(a => !RF.pessoa || a.usuario === RF.pessoa).sort((a,b)=> a.quando < b.quando ? 1 : -1);
-  const tiposA = ['Criou cartão','Moveu','Viu arquivos novos','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
+  const tiposA = ['Criou cartão','Moveu','Viu arquivos novos','Valor','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
   const porPessoa = {}; ativ.forEach(a => { (porPessoa[a.usuario] ||= {}); porPessoa[a.usuario][a.acao] = (porPessoa[a.usuario][a.acao]||0)+1; });
   const ultAcesso = {}; (R.atividades||[]).forEach(a => { if (a.acao==='Entrou no quadro' && (!ultAcesso[a.usuario] || a.quando > ultAcesso[a.usuario])) ultAcesso[a.usuario] = a.quando; });
   const movs = contar(R.historico.filter(h => h.usuario && h.usuario!=='Formulário' && noPer(h.quando) && (!RF.quadro || h.paraQuadro===RF.quadro)), h => h.usuario);
@@ -1249,6 +1353,10 @@ function gerarDemo(){
     casos.push({id, criadoEm:new Date(criado).toISOString(), quadro:qq, coluna:cc, colunaDesde:new Date(t).toISOString(), paciente:`${pick(pac)} ${pick(sob)}`, dentista:pick(dent), dentistaWhats:'99981234567', dentistaEmail:'', ...(rnd()<.35 ? {origem:'Escola de Pós-Graduação', clinica:pick(['IOA','IOA Implante','ABO'])} : {origem:'Consultório Particular', clinica:''}), componente:pick(['','Scanbody cone Morse','Mini pilar 4.1','']), dataSolicitacao:new Date(criado).toISOString().slice(0,10), etiquetas:[rnd()<.45?'FALTA LANÇAR':'', rnd()<.2?pick(['PAGO','BOLETO','PIX']):'', rnd()<.08?'URGENTE':''].filter(Boolean).join('|'), servico:s2 && s2!==s ? s+'; '+s2 : s, dentes:pick(dentes), material:pick(['Zircônia','Dissilicato','PMMA','Resina impressa','']), cor:pick(['A1','A2','A3','BL2','']), prazo, observacoes:'Caso de demonstração.', pastaUrl:'https://drive.google.com/', pastaId:'', token:'demo'+i, status:'ativo', responsavel:rnd()<.5?pick(equipe):'', atualizadoEm:new Date(t).toISOString(), anexos:String(Math.floor(rnd()*5)), comentarios:0});
     if (rnd() < .3){ coms.push({casoId:id, quando:new Date(t).toISOString(), usuario:pick(equipe), texto:pick(['Arquivo STL conferido.','Dentista pediu para ajustar o contato proximal.','Aguardando foto de cor.'])}); casos[casos.length-1].comentarios = 1; }
   }
+  const combos = ['ExactSmileDesign – Enceramento digital; ExactShell – Mockup impresso','ExactGuide – Cirurgia guiada','ExactProv – Coroa impressa 3D (resina sem carga cerâmica)','ExactSplint – Placa miorrelaxante COM guias de desoclusão','ExactPerio – Guia periodontal; ExactSmileDesign – Enceramento digital'];
+  casos.forEach((c, i) => { if (c.origem !== 'Consultório Particular' || i % 3 === 2) return;
+    c.servico = combos[i % combos.length]; if (/SmileDesign/.test(c.servico)) c.dentes = '13, 12, 11, 21, 22, 23';
+    if (i % 4 === 0) { const e = estimarValor(c); e.desconto = i % 8 === 0 ? 30 : 0; delete e.estimado; e.editadoPor = 'Ana Keila'; e.editadoEm = new Date().toISOString(); c.valor = JSON.stringify(e); } });
   D = {quadros, casos, hist, coms, grupos, etiquetas, equipe};
 }
 async function demoApi(acao, d){
@@ -1287,6 +1395,7 @@ async function demoApi(acao, d){
     case 'renomearColuna': { const q = D.quadros.find(x => x.nome === d.quadro); if (q.colunas.some(x => x.nome === d.para)) throw new Error('Já existe uma coluna com esse nome neste quadro');
       const col = q.colunas.find(x => x.nome === d.de); if (col.publico === d.de) col.publico = d.para; col.nome = d.para;
       D.casos.forEach(c => { if (c.quadro === d.quadro && c.coluna === d.de) c.coluna = d.para; }); return {ok:true, quadros:D.quadros}; }
+    case 'valor': { const c = D.casos.find(x => x.id === d.id); if (c) { c.valor = JSON.stringify(d.valor); c.valorTotal = String(d.valor.total); } return {ok:true}; }
     case 'visto': { const c = D.casos.find(x => x.id === d.id); if (c) { c.novosArquivos = ''; c.novosDesde = ''; } return {ok:true}; }
     case 'criar': { const agora = new Date().toISOString(), id = 'EX-' + String(D.casos.length + 100).padStart(5,'0');
       D.casos.push({id, criadoEm:agora, quadro:d.quadro, coluna:d.coluna, colunaDesde:agora, status:'ativo', paciente:d.dados.paciente, dentista:d.dados.dentista||'', servico:d.dados.servico||'', origem:d.dados.origem||'', posicao:String(Date.now()), anexos:'0', etiquetas:'', token:'demo'});
