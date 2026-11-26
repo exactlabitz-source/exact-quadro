@@ -314,6 +314,27 @@ details.serv label input{width:auto}
 .ent-vazio b{color:#fff}
 .ent-vazio svg{background:rgba(255,255,255,.9)}
 .tab-sep{background:rgba(255,255,255,.25)}
+/* fornecedor: só o próprio quadro, sem financeiro nem dados do dentista */
+.forn #b-entrada,.forn .tab-sep,.forn #b-rel,.forn #b-quadro,.forn .add-card,.forn #m-editar,.forn #m-arq,.forn #m-copiar,.forn .btn.wa,.forn #m-glbl,.forn #m-valor,.forn .vtag{display:none!important}
+.forn .col-tit,.forn #m-lbls{pointer-events:none}
+.forn .full:has(#m-resp){display:none}
+.forn .wa-tag{display:none}
+/* Arquivados */
+#arquivados{flex:1;overflow-y:auto;padding:16px}
+.aq-box{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:var(--sh);max-width:1150px;margin:0 auto}
+.aq-filt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.aq-filt input,.aq-filt select{width:auto}
+.aq-filt input{flex:1;min-width:200px}
+.aq-row{display:grid;grid-template-columns:90px minmax(0,1.4fr) minmax(0,1.1fr) 120px 250px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}
+.aq-row.h{border-top:0;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:700;padding:4px 0}
+.aq-row small{display:block;color:var(--mut);font-size:12px;margin-top:1px}
+.aq-os{font-weight:700;color:var(--navy)}
+.aq-acts{display:flex;gap:6px;justify-content:flex-end}
+.aq-pop{grid-column:1/-1;justify-self:end;width:min(340px,100%);display:flex;flex-direction:column;gap:7px;border:2px solid var(--teal);border-radius:10px;padding:12px;background:#fff}
+.aq-pop small{color:var(--mut);font-size:12px}
+.aq-tag{font-size:12px;font-weight:700;color:#7a5600;background:#fff3cd;border-radius:6px;padding:4px 8px;align-self:center}
+@media (max-width:760px){.aq-row{grid-template-columns:80px 1fr}.aq-row>:nth-child(3),.aq-row>:nth-child(4){display:none}.aq-acts{grid-column:1/-1;justify-content:flex-start}}
+.forn #b-arqv{display:none!important}
 </style>
 </head>
 <body>
@@ -346,6 +367,7 @@ details.serv label input{width:auto}
     <select id="f-orig" title="Filtrar por origem do trabalho"><option value="">Todas as origens</option><option value="part">Consultório Particular</option><option value="pos">Pós-Graduação / Curso</option></select>
     <button class="btn on" id="b-quadro">Quadros</button>
     <button class="btn" id="b-rel">Relatórios</button>
+    <button class="btn" id="b-arqv">Arquivados</button>
     <span class="sp"></span>
     <button class="btn sm" id="b-atual" title="Atualizar">Atualizar</button>
     <span class="user" id="u-nome"></span>
@@ -356,6 +378,7 @@ details.serv label input{width:auto}
   <main id="board"></main>
   <section id="entrada" hidden></section>
   <section id="reports" hidden></section>
+  <section id="arquivados" hidden></section>
 </div>
 
 <div class="modal" id="modal" hidden><div class="mbox" id="mbox"></div></div>
@@ -458,7 +481,8 @@ function estimarValor(c){
   if (!itens.length && !aCombinar.length) return null;
   return {itens, aCombinar, desconto:0, estimado:true};
 }
-const valorOuEstimativa = c => valorDe(c) || estimarValor(c);
+const ehFornecedor = () => S.perfil === 'fornecedor';
+const valorOuEstimativa = c => ehFornecedor() ? null : (valorDe(c) || estimarValor(c));
 function vtagHTML(c){
   const v = valorOuEstimativa(c); if (!v) return '';
   const t = totalValor(v);
@@ -468,6 +492,7 @@ function vtagHTML(c){
 function totalValor(v){ return v ? Math.max(0, v.itens.reduce((a,x) => a + (Number(x.total)||0), 0) - (Number(v.desconto)||0)) : 0; }
 const nomeServ = s => String(s).split(' – ')[0] + (/Protus|Model|Splint/.test(s) && s.includes(' – ') ? ' – ' + s.split(' – ').slice(1).join(' – ') : '');
 function valorSecHTML(c){
+  if (ehFornecedor()) return '';
   const v = valorOuEstimativa(c); if (!v && origemTipo(c) !== 'part') return '';
   const linhas = v ? v.itens.map(it => `<tr><td>${esc(nomeServ(it.servico))}${it.unidade==='guia' && it.implantes ? `<small>guia ${brl(it.unit)} + ${it.implantes} implante(s) × ${brl(it.extra)}</small>` : ''}</td><td class="r">${it.unidade==='dente' ? `${it.qtd} dente(s)` : it.unidade==='guia' ? '1 guia' : esc(it.qtd)}</td><td class="r">${brl(it.unit)}</td><td class="r">${brl(it.total)}</td></tr>`).join('') : '';
   const est = v && v.estimado;
@@ -534,7 +559,8 @@ async function carregar(silencioso){
   if (!quadrosTrabalho().some(q => q.nome === S.atual)) S.atual = (quadrosTrabalho()[0]||{}).nome;
   const n = naEntrada().length;
   S.carregado = true;
-  if (antes === null) S.view = 'entrada';                          // ao abrir, sempre começa pela Entrada de casos
+  document.body.classList.toggle('forn', ehFornecedor());
+  if (antes === null) S.view = ehFornecedor() ? 'quadro' : 'entrada';   // ao abrir, começa pela Entrada de casos (fornecedor: no quadro dele)
   if (silencioso && antes !== null && n > antes) toast(`${n - antes} caso(s) novo(s) chegaram na Entrada`, false, 'Ver', () => { S.view = 'entrada'; render(); });
   document.title = (n ? `(${n}) ` : '') + 'Exact · Quadro de Casos';
   carregarCapas();
@@ -569,10 +595,11 @@ function linkWhats(c, etapa){
 
 /* ===== RENDER ===== */
 function render(){
+  if (ehFornecedor() && S.view !== 'quadro') S.view = 'quadro';
   renderTabs();
-  $('#board').hidden = S.view !== 'quadro'; $('#entrada').hidden = S.view !== 'entrada'; $('#reports').hidden = S.view !== 'rel'; $('#tabs').hidden = S.view === 'rel';
-  $('#b-quadro').classList.toggle('on', S.view!=='rel'); $('#b-rel').classList.toggle('on', S.view==='rel');
-  if (S.view === 'quadro') renderBoard(); else if (S.view === 'entrada') renderEntrada(); else renderRel();
+  $('#board').hidden = S.view !== 'quadro'; $('#entrada').hidden = S.view !== 'entrada'; $('#reports').hidden = S.view !== 'rel'; $('#arquivados').hidden = S.view !== 'arq'; $('#tabs').hidden = S.view === 'rel' || S.view === 'arq';
+  $('#b-quadro').classList.toggle('on', S.view!=='rel' && S.view!=='arq'); $('#b-rel').classList.toggle('on', S.view==='rel'); $('#b-arqv').classList.toggle('on', S.view==='arq');
+  if (S.view === 'quadro') renderBoard(); else if (S.view === 'entrada') renderEntrada(); else if (S.view === 'arq') renderArq(); else renderRel();
 }
 
 function renderTabs(){
@@ -685,6 +712,77 @@ $('#f-orig').onchange = e => { S.filtroOrig = e.target.value; render(); };
 $('#busca').addEventListener('input', e => { S.busca = e.target.value; if (S.view==='quadro') render(); });
 $('#b-quadro').onclick = () => { S.view = S.view==='rel' ? 'quadro' : S.view; render(); };
 $('#b-rel').onclick = async () => { S.view='rel'; render(); await carregarRel(); };
+$('#b-arqv').onclick = async () => { S.view='arq'; render(); await carregarArq(); };
+
+/* ===== ARQUIVADOS ===== */
+const AQ = {lista:null, busca:'', quadro:'', dias:'90', abrindo:null};
+async function carregarArq(){
+  try { const r = await api('arquivados', {}); AQ.lista = r.casos || []; }
+  catch(e){ AQ.lista = []; toast(e.message, true); }
+  if (S.view === 'arq') renderArq();
+}
+function opcoesDestino(qSel, cSel){
+  const qs = S.quadros.map(q => q.nome);
+  const q = qs.includes(qSel) ? qSel : qs[0];
+  const cols = (S.quadros.find(x => x.nome === q)?.colunas || []).map(c => c.nome);
+  return {q, cols, c: cols.includes(cSel) ? cSel : cols[0], qs};
+}
+function destinoHTML(c){
+  const o = opcoesDestino(c.quadro, c.coluna);
+  return `<div class="aq-pop" data-id="${esc(c.id)}"><b>Voltar ${esc(c.id)} para…</b>
+    <select class="aq-q">${o.qs.map(n => `<option ${n===o.q?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    <select class="aq-c">${o.cols.map(n => `<option ${n===o.c?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    <small>${c.quadro===o.q && c.coluna===o.c ? 'Já vem marcado onde ele estava. Dá para trocar.' : 'A coluna onde ele estava não existe mais, escolha o destino.'}</small>
+    <div class="aq-acts"><button type="button" class="btn sm aq-cancel">Cancelar</button><button type="button" class="btn sm pri aq-ok">Voltar</button></div></div>`;
+}
+function ligarDestino(box, c, depois){
+  const qSel = box.querySelector('.aq-q'), cSel = box.querySelector('.aq-c');
+  qSel.onchange = () => { const o = opcoesDestino(qSel.value, ''); cSel.innerHTML = o.cols.map(n => `<option>${esc(n)}</option>`).join(''); };
+  box.querySelector('.aq-cancel').onclick = () => depois(false);
+  box.querySelector('.aq-ok').onclick = async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Voltando…';
+    try {
+      const r = await api('arquivar', {id:c.id, reativar:true, quadro:qSel.value, coluna:cSel.value});
+      AQ.lista = (AQ.lista||[]).filter(x => x.id !== c.id);
+      const novo = r.caso || {...c, status:'ativo', quadro:qSel.value, coluna:cSel.value, colunaDesde:new Date().toISOString()};
+      S.casos = S.casos.filter(x => x.id !== c.id).concat([novo]);
+      toast(`${c.id} voltou para ${qSel.value} › ${cSel.value}`, false, 'Ir ao quadro', () => { fecharModal(); S.atual = qSel.value; S.view = 'quadro'; render(); });
+      depois(true);
+    } catch(err){ toast(err.message, true); b.disabled = false; b.textContent = 'Voltar'; }
+  };
+}
+function renderArq(){
+  const el = $('#arquivados');
+  if (AQ.lista === null) { el.innerHTML = '<div class="aq-box"><p class="muted">Carregando arquivados…</p></div>'; return; }
+  const lim = AQ.dias === 'todos' ? 0 : Date.now() - Number(AQ.dias) * 864e5;
+  const t = norm(AQ.busca);
+  const lista = AQ.lista.filter(c => (!AQ.quadro || c.quadro === AQ.quadro) && (!lim || new Date(c.arquivadoEm).getTime() >= lim) &&
+    (!t || norm([c.id, c.paciente, c.dentista, c.servico].join(' ')).includes(t)));
+  const qs = [...new Set(AQ.lista.map(c => c.quadro))].sort();
+  el.innerHTML = `<div class="aq-box">
+    <div class="aq-filt"><input id="aq-b" placeholder="Buscar paciente, dentista ou OS…" value="${esc(AQ.busca)}">
+      <select id="aq-q"><option value="">Todos os quadros</option>${qs.map(q => `<option ${q===AQ.quadro?'selected':''}>${esc(q)}</option>`).join('')}</select>
+      <select id="aq-d">${[['30','Últimos 30 dias'],['90','Últimos 90 dias'],['365','Último ano'],['todos','Todos']].map(([v,l]) => `<option value="${v}" ${v===AQ.dias?'selected':''}>${l}</option>`).join('')}</select>
+      <span class="muted">${lista.length} caso${lista.length===1?'':'s'}</span></div>
+    ${lista.length ? `<div class="aq-row h"><span>OS</span><span>Paciente / dentista</span><span>Onde estava</span><span>Arquivado</span><span></span></div>` +
+      lista.map(c => `<div class="aq-row" data-id="${esc(c.id)}"><span class="aq-os">${esc(c.id)}</span>
+        <span>${esc(c.paciente)}<small>Dr(a). ${esc(c.dentista||'—')}${c.servico ? ' · ' + esc(nomeServ(String(c.servico).split(/;\s*/)[0])) : ''}</small></span>
+        <span>${esc(c.quadro)}<small>${esc(c.coluna)}</small></span>
+        <span>${fmtD(c.arquivadoEm)}<small>${c.arquivadoPor ? 'por ' + esc(c.arquivadoPor) : ''}</small></span>
+        <span class="aq-acts"><button type="button" class="btn sm aq-ver">Ver caso</button><button type="button" class="btn sm pri aq-volta">Voltar ao quadro</button></span>
+        ${AQ.abrindo === c.id ? destinoHTML(c) : ''}</div>`).join('')
+      : `<div class="ent-vazio" style="color:var(--mut)"><b style="color:var(--navy)">Nenhum caso arquivado ${AQ.busca||AQ.quadro ? 'com esse filtro' : 'nesse período'}.</b></div>`}
+  </div>`;
+  const b = $('#aq-b'); b.oninput = () => { AQ.busca = b.value; const pos = b.selectionStart; renderArq(); const nb = $('#aq-b'); nb.focus(); nb.setSelectionRange(pos, pos); };
+  $('#aq-q').onchange = e => { AQ.quadro = e.target.value; renderArq(); };
+  $('#aq-d').onchange = e => { AQ.dias = e.target.value; renderArq(); };
+  el.querySelectorAll('.aq-row[data-id]').forEach(r => {
+    const c = AQ.lista.find(x => x.id === r.dataset.id);
+    r.querySelector('.aq-ver').onclick = () => abrirCaso(c.id);
+    r.querySelector('.aq-volta').onclick = () => { AQ.abrindo = AQ.abrindo === c.id ? null : c.id; renderArq(); };
+    const pop = r.querySelector('.aq-pop'); if (pop) ligarDestino(pop, c, () => { AQ.abrindo = null; renderArq(); });
+  });
+}
 $('#b-atual').onclick = async () => { try{ await carregar(); if(S.view==='rel') await carregarRel(); toast('Atualizado'); }catch(e){ toast(e.message,true); } };
 $('#b-sair').onclick = sair;
 
@@ -942,7 +1040,8 @@ document.addEventListener('drop', e => {
 });
 
 function abrirCaso(id){
-  const c = S.casos.find(x => x.id === id); if (!c) return;
+  const c = S.casos.find(x => x.id === id) || (AQ.lista || []).find(x => x.id === id); if (!c) return;
+  const arquivado = c.status === 'arquivado';
   const link = linkAcomp(c);
   $('#mbox').innerHTML = `
   <div class="mhead"><div>
@@ -995,7 +1094,7 @@ function abrirCaso(id){
       <div class="acts">
         ${c.dentistaWhats?`<a class="btn wa" href="${esc(linkWhats(c))}" target="_blank" rel="noopener">Avisar dentista</a>`:''}
         ${link?`<button class="btn" id="m-copiar">Copiar link do dentista</button>`:''}
-        <button class="btn danger" id="m-arq">Arquivar</button>
+        ${arquivado ? `<span class="aq-tag">Caso arquivado</span><button class="btn pri" id="m-reativar">Voltar ao quadro</button>` : `<button class="btn danger" id="m-arq">Arquivar</button>`}
       </div>
       <div class="sec"><h4>Mover caso</h4>
         <div class="movebox">
@@ -1060,7 +1159,13 @@ function abrirCaso(id){
     } catch(e){ toast(e.message, true); }
   };
   if (link) $('#m-copiar').onclick = async () => { try{ await navigator.clipboard.writeText(link); toast('Link copiado'); }catch(e){ prompt('Copie o link:', link); } };
-  $('#m-arq').onclick = async e => {
+  if (arquivado) {
+    $('#m-reativar').onclick = e => {
+      const holder = document.createElement('div'); holder.innerHTML = destinoHTML(c); const pop = holder.firstElementChild;
+      e.currentTarget.replaceWith(pop);
+      ligarDestino(pop, c, ok => { if (ok) { fecharModal(); if (S.view === 'arq') renderArq(); else render(); } else abrirCaso(c.id); });
+    };
+  } else $('#m-arq').onclick = async e => {
     const b = e.currentTarget;
     if (!b.classList.contains('confirm')) { b.classList.add('confirm'); b.textContent = 'Confirmar arquivamento'; return; }
     try { await api('arquivar', {id:c.id}); S.casos = S.casos.filter(x => x.id !== c.id); render(); fecharModal(); toast('Caso arquivado'); }
@@ -1083,8 +1188,8 @@ function verSolicitacao(c){
     ${linha('Dentes', esc(c.dentes))}
     ${linha('Data da solicitação', fmtD(c.dataSolicitacao))}
     ${linha('Dentista', esc(c.dentista))}
-    ${linha('WhatsApp', wa)}
-    ${linha('E-mail', esc(c.dentistaEmail))}
+    ${ehFornecedor() ? '' : linha('WhatsApp', wa)}
+    ${ehFornecedor() ? '' : linha('E-mail', esc(c.dentistaEmail))}
     ${linha('Origem', esc([c.origem, c.clinica].filter(Boolean).join(' · ')))}
     ${linha('Cor do trabalho', esc(c.cor))}
     ${linha('Material restaurador', esc(c.material))}
@@ -1372,6 +1477,7 @@ function gerarDemo(){
   casos.forEach((c, i) => { if (c.origem !== 'Consultório Particular' || i % 3 === 2) return;
     c.servico = combos[i % combos.length]; if (/SmileDesign/.test(c.servico)) c.dentes = '13, 12, 11, 21, 22, 23';
     if (i % 4 === 0) { const e = estimarValor(c); e.desconto = i % 8 === 0 ? 30 : 0; delete e.estimado; e.editadoPor = 'Ana Keila'; e.editadoEm = new Date().toISOString(); c.valor = JSON.stringify(e); } });
+  ['Saymon','Ana Keila','Tiago','Brenda'].forEach((nome, k) => [0,1].forEach(j => { const c = casos[casos.length - 1 - k*2 - j]; if (!c || c.quadro === 'Entrada dos Casos') return; c.status = 'arquivado'; c.arquivadoEm = new Date(Date.now() - (k*9 + j*4 + 2) * 864e5).toISOString(); c.arquivadoPor = nome; }));
   D = {quadros, casos, hist, coms, grupos, etiquetas, equipe};
 }
 async function demoApi(acao, d){
@@ -1395,7 +1501,10 @@ async function demoApi(acao, d){
       if (mud.length){ D.coms.push({casoId:c.id, quando:new Date().toISOString(), usuario:S.user.nome, texto:'[Solicitação editada]\n' + mud.join('\n')}); c.comentarios = (Number(c.comentarios)||0)+1; }
       return {ok:true, caso:c, mudancas:mud.length}; }
     case 'comentar': D.coms.push({casoId:d.id, quando:new Date().toISOString(), usuario:S.user.nome, texto:d.texto}); return {ok:true};
-    case 'arquivar': caso(d.id).status = 'arquivado'; return {ok:true};
+    case 'arquivar': { const c = caso(d.id);
+      if (d.reativar) { Object.assign(c, {status:'ativo', quadro:d.quadro||c.quadro, coluna:d.coluna||c.coluna, colunaDesde:new Date().toISOString(), posicao:String(Date.now())}); return {ok:true, caso:{...c}}; }
+      c.status = 'arquivado'; c.arquivadoEm = new Date().toISOString(); c.arquivadoPor = S.user?.nome || ''; return {ok:true}; }
+    case 'arquivados': return {ok:true, casos:D.casos.filter(c => c.status === 'arquivado').sort((a,b) => String(b.arquivadoEm).localeCompare(String(a.arquivadoEm)))};
     case 'detalhe': return {ok:true, comentarios:D.coms.filter(x=>x.casoId===d.id).map(x=>({...x})), historico:D.hist.filter(x=>x.casoId===d.id).map(x=>({...x}))};
     case 'relatorio': { const pac = id => (D.casos.find(c=>c.id===id)||{}).paciente||'';
       const atividades = [...D.hist.filter(h=>h.deColuna).map(h=>({quando:h.quando, usuario:h.usuario, acao:'Moveu', casoId:h.casoId, paciente:pac(h.casoId), detalhe:`${h.deColuna}  →  ${h.paraColuna}`})),
