@@ -336,6 +336,8 @@ details.serv label input{width:auto}
 @media (max-width:760px){.aq-row{grid-template-columns:80px 1fr}.aq-row>:nth-child(3),.aq-row>:nth-child(4){display:none}.aq-acts{grid-column:1/-1;justify-content:flex-start}}
 .forn #b-arqv{display:none!important}
 .fim-tag{font-size:10.5px;font-weight:700;color:#5b6b7a;background:#e3e8ee;border-radius:5px;padding:1px 6px;margin-left:6px;white-space:nowrap}
+.pinbox{position:relative}.pinbox input{padding-right:48px}
+#l-ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:18px;cursor:pointer;opacity:.55;padding:6px}
 </style>
 </head>
 <body>
@@ -352,8 +354,8 @@ details.serv label input{width:auto}
   <form class="login-box" id="f-login" autocomplete="on">
     <h1>Quadro de Casos</h1>
     <p class="muted">Entre com seu nome e PIN da equipe.</p>
-    <div class="f"><label for="l-nome">Nome</label><input id="l-nome" required autocomplete="username"></div>
-    <div class="f"><label for="l-pin">PIN</label><input id="l-pin" type="password" inputmode="numeric" required autocomplete="current-password"></div>
+    <div class="f"><label for="l-nome">Nome</label><input id="l-nome" required autocomplete="username" autocapitalize="words" autocorrect="off" spellcheck="false"></div>
+    <div class="f"><label for="l-pin">PIN</label><div class="pinbox"><input id="l-pin" type="password" required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><button type="button" id="l-ver" aria-label="Mostrar PIN" title="Mostrar PIN">👁</button></div></div>
     <div class="erro" id="l-erro"></div>
     <button type="button" class="btn pri" id="b-entrar" style="width:100%">Entrar</button>
   </form>
@@ -1545,6 +1547,7 @@ async function demoApi(acao, d){
 (async () => {
   const s = lerSessao();
   if (!API_URL){ $('#l-nome').value = 'Tiago'; $('#l-pin').value = '0000'; }
+  $('#l-ver').onclick = () => { const i = $('#l-pin'), v = i.type === 'password'; i.type = v ? 'text' : 'password'; $('#l-ver').setAttribute('aria-label', v ? 'Esconder PIN' : 'Mostrar PIN'); $('#l-ver').style.opacity = v ? 1 : .55; i.focus(); };
   if (s && s.nome) reentrar(s);
 })();
 
