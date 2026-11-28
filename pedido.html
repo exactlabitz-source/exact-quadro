@@ -48,6 +48,8 @@ input:focus,textarea:focus,select:focus{outline:3px solid rgba(222,39,119,.18);b
 .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;color:var(--navy)}
 .btn:hover{border-color:var(--navy)}
 .btn.sm{padding:6px 12px;font-size:13px}
+.btn.wa-big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:16px 0 6px;padding:14px 18px;background:#25d366;border-color:#25d366;color:#fff;font-size:16px;text-decoration:none}
+.wa-dica{font-size:13px;color:var(--mut);margin:0 2px 10px;text-align:center}
 .btn.gold{background:var(--pink);border-color:var(--pink);color:#fff}
 .btn.gold:hover{background:var(--pink-d)}
 .btn.rec.on{background:var(--red);border-color:var(--red);color:#fff}
@@ -203,6 +205,8 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
   <div class="num" id="ok-num"></div>
   <p>Guarde esse número. Pelo link abaixo você acompanha cada etapa do trabalho:</p>
   <div class="lk" id="ok-link"></div>
+  <a class="btn wa-big" id="ok-wa" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.8 11.8 0 004.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 001.8-1.3 2.2 2.2 0 00.1-1.3c0-.1-.2-.2-.5-.3z"/></svg>Receber a confirmação no meu WhatsApp</a>
+  <p class="wa-dica" id="ok-wa-dica" hidden>Abre a conversa com a EXACT com a mensagem pronta. É só tocar em enviar: o número do pedido e o link de acompanhamento ficam guardados no seu WhatsApp.</p>
   <p id="ok-aviso" style="color:var(--red);font-weight:600"></p>
   <div class="acoes"><button class="btn" id="copiar">Copiar link</button><button class="btn gold" id="novo">Fazer outro pedido</button></div>
 </section>
@@ -214,6 +218,7 @@ footer{text-align:center;color:var(--mut);font-size:12.5px;padding:0 0 30px}
 <script src="upload.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbkdhXM_K2bwWs4qxSuG2Du3DjdFzrcvYk1dZcGN8A7x_dagTDgDqwmE6639hNLCoC/exec'; // mesma URL do Apps Script usada no quadro.html
+let WHATS_LAB = '99982500013';   // WhatsApp da EXACT (vem da aba Config, WHATS_LAB)
 // Lista usada no modo demonstração (no modo real ela vem da aba "Servicos" da planilha)
 const GRUPOS_PADRAO = [
   {grupo:'Serviços Laboratoriais', itens:['Barra usinada (Titânio)','Barra fundida','Protocolo provisório impresso','Modelo em gesso com gengiva artificial','Moldeira individual','Plano de orientação','Montagem dos dentes','Acrilização','Aparelho ortopédico','Contenção ortodôntica','Coroas/facetas em cerâmica sobre dente','Coroas em cerâmica sobre implante','Estrutura metálica para PPR'].map(s=>({servico:s}))},
@@ -254,7 +259,7 @@ function renderServicos(grupos){
 $('#servicos').addEventListener('change', () => { const n = document.querySelectorAll('[name=servicos]:checked').length; $('#nsel').hidden = !n; $('#nsel').textContent = `${n} selecionado${n>1?'s':''}`; });
 (async () => {
   let grupos = GRUPOS_PADRAO;
-  if (API_URL) { try { const j = await api('form', {}); if (j.grupos?.length) grupos = j.grupos; } catch(e){} }
+  if (API_URL) { try { const j = await api('form', {}); if (j.grupos?.length) grupos = j.grupos; if (j.whatsLab) WHATS_LAB = j.whatsLab; } catch(e){} }
   else $('#demo').hidden = false;
   renderServicos(grupos);
 })();
@@ -380,6 +385,13 @@ async function enviar(){
     $('#ok-num').textContent = r.id;
     $('#ok-link').textContent = r.linkAcompanhar || 'O laboratório vai te mandar o link de acompanhamento pelo WhatsApp.';
     $('#copiar').hidden = !r.linkAcompanhar;
+    if (r.linkAcompanhar && WHATS_LAB) {
+      let lab = String(WHATS_LAB).replace(/\D/g, ''); if (lab.length <= 11) lab = '55' + lab;
+      const servs = (p.servicos || []).map(x => String(x).split(' – ')[0]).filter((x, i, a) => a.indexOf(x) === i).join(', ');
+      const txt = `Olá, EXACT! Acabei de enviar o pedido ${r.id} ✅\nPaciente: ${p.paciente}${servs ? '\nServiço: ' + servs : ''}\n\nLink para acompanhar o trabalho:\n${r.linkAcompanhar}`;
+      $('#ok-wa').href = `https://wa.me/${lab}?text=${encodeURIComponent(txt)}`;
+      $('#ok-wa').hidden = false; $('#ok-wa-dica').hidden = false;
+    }
     $('#copiar').onclick = async () => { try { await navigator.clipboard.writeText(r.linkAcompanhar); $('#copiar').textContent = 'Copiado!'; } catch(e){} };
     if (arquivos.length && API_URL) {
       $('#ok-aviso').style.color = 'var(--navy)';

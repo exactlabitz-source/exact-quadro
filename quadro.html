@@ -338,6 +338,13 @@ details.serv label input{width:auto}
 .fim-tag{font-size:10.5px;font-weight:700;color:#5b6b7a;background:#e3e8ee;border-radius:5px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 .pinbox{position:relative}.pinbox input{padding-right:48px}
 #l-ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:18px;cursor:pointer;opacity:.55;padding:6px}
+.ent-conf{margin:10px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ent-conf:empty{display:none}
+.conf-btn{background:#25d366!important;border-color:#25d366!important;color:#fff!important;text-decoration:none}
+.conf-ok{font-size:12.5px;font-weight:700;color:#11633d;background:#e3f3ea;border-radius:6px;padding:3px 8px}
+.conf-re{font-size:12px;color:var(--mut);text-decoration:underline}
+.m-conf{display:inline-flex;align-items:center;gap:8px}
+.forn .ent-conf,.forn .m-conf{display:none!important}
 </style>
 </head>
 <body>
@@ -589,6 +596,25 @@ const origemHTML = c => { const t = origemTipo(c); if (!t) return `<span class="
   return t==='pos' ? `<span class="orig o-pos" title="${esc(c.origem)}${c.clinica?' · '+esc(c.clinica):''}">Pós-graduação${c.clinica?' · '+esc(c.clinica):''}</span>` : `<span class="orig o-part">Particular</span>`; };
 const bate = c => (!S.filtroOrig || origemTipo(c) === S.filtroOrig) && (!S.filtroLbl || lblsDe(c).includes(S.filtroLbl)) && (!S.busca || norm([c.id,c.paciente,c.dentista,c.servico,c.clinica,c.dentes,c.responsavel,c.etiquetas,c.origem].join(' ')).includes(norm(S.busca)));
 function linkAcomp(c){ return S.urlAcomp ? `${S.urlAcomp}${S.urlAcomp.includes('?')?'&':'?'}os=${encodeURIComponent(c.id)}&k=${c.token}` : ''; }
+/* confirmação do pedido para o dentista (WhatsApp, um toque) */
+function linkConfirma(c){
+  const link = linkAcomp(c); let f = String(c.dentistaWhats||'').replace(/\D/g,''); if (!f || !link) return '';
+  if (f.length <= 11) f = '55' + f;
+  const servs = servicosDe(c).map(x => String(x).split(' – ')[0]).filter((x,i,a) => a.indexOf(x) === i).join(', ');
+  const msg = `Oi Dr(a). ${c.dentista}, tudo bem? Aqui é da EXACT 😊\n\nRecebemos o pedido de ${c.paciente}${servs ? ' (' + servs + ')' : ''}, número ${c.id}.\n\nPor esse link você acompanha cada etapa do trabalho:\n${link}`;
+  return `https://wa.me/${f}?text=${encodeURIComponent(msg)}`;
+}
+function confirmaHTML(c, grande){
+  if (!linkConfirma(c)) return '';
+  if (c.confirmadoEm) return `<span class="conf-ok" title="Enviada por ${esc(c.confirmadoPor||'')} em ${fmtDH(c.confirmadoEm)}">✓ Confirmação enviada</span><a class="conf-re" data-confirma href="${esc(linkConfirma(c))}" target="_blank" rel="noopener">reenviar</a>`;
+  return `<a class="btn wa conf-btn ${grande?'':'sm'}" data-confirma href="${esc(linkConfirma(c))}" target="_blank" rel="noopener">Enviar confirmação</a>`;
+}
+async function marcarConfirmado(id){
+  const c = S.casos.find(x => x.id === id); if (!c) return;
+  c.confirmadoEm = new Date().toISOString(); c.confirmadoPor = S.user?.nome || '';
+  render(); if (!$('#modal').hidden) { const b = $('#m-conf'); if (b) b.innerHTML = confirmaHTML(c, true); }
+  try { await api('confirmar', {id}); } catch(e){ toast(e.message, true); }
+}
 function linkWhats(c, etapa){
   const mapa = {dentista:c.dentista, paciente:c.paciente, servico:c.servico, etapa:etapa||etapaPub(c), link:linkAcomp(c), os:c.id};
   const msg = (S.msgWhats || 'Atualização do caso {os} ({paciente}): {etapa}. {link}').replace(/\{(\w+)\}/g,(m,k)=> k in mapa ? mapa[k] : m);
@@ -689,6 +715,7 @@ function renderEntrada(){
         <div class="meta">Dr(a). ${esc(c.dentista)}${c.dentes?` · dentes ${esc(c.dentes)}`:''}</div>
         ${c.observacoes ? `<p class="ent-obs">${esc(c.observacoes.length > 140 ? c.observacoes.slice(0,140)+'…' : c.observacoes)}</p>` : ''}
         <div class="foot">${Number(c.anexos)?`<span class="ico">${IC.clip}${esc(c.anexos)} anexo(s)</span>`:''}${c.prazo?`<span class="ico">${IC.cal}prazo ${fmtD(c.prazo)}</span>`:''}${vtagHTML(c)}<a class="ent-ver" data-abrir>Ver pedido completo</a></div>
+        <div class="ent-conf">${confirmaHTML(c)}</div>
         <div class="ent-dest"><span>Enviar para:</span>${destinos.map(q => `<button data-dest="${esc(q.nome)}">${esc(q.nome)}</button>`).join('')}</div>
       </article>`).join('')}</div>`
     : `<div class="ent-vazio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6L9 17l-5-5"/></svg><b>Nenhum caso esperando.</b><span>Quando um dentista enviar um pedido, ele aparece aqui e o botão "Entrada de casos" acende.</span></div>`}`;
@@ -696,6 +723,7 @@ function renderEntrada(){
 
 $('#entrada').addEventListener('click', async e => {
   const card = e.target.closest('.ent-card'); if (!card) return;
+  if (e.target.closest('[data-confirma]')) { marcarConfirmado(card.dataset.id); return; }
   const dest = e.target.closest('[data-dest]');
   if (!dest) { abrirCaso(card.dataset.id); return; }
   const q = quadro(dest.dataset.dest); const col = q?.colunas[0]?.nome; if (!col) return;
@@ -1097,6 +1125,7 @@ function abrirCaso(id){
         <div id="m-arqs"><p class="muted" style="margin:8px 0 0">Carregando arquivos…</p></div>
       </div>
       <div class="acts">
+        ${arquivado ? '' : `<span id="m-conf" class="m-conf">${confirmaHTML(c, true)}</span>`}
         ${c.dentistaWhats?`<a class="btn wa" href="${esc(linkWhats(c))}" target="_blank" rel="noopener">Avisar dentista</a>`:''}
         ${link?`<button class="btn" id="m-copiar">Copiar link do dentista</button>`:''}
         ${arquivado ? `<span class="aq-tag">Caso arquivado</span><button class="btn pri" id="m-reativar">Voltar ao quadro</button>` : `<button class="btn danger" id="m-arq">Arquivar</button>`}
@@ -1164,6 +1193,7 @@ function abrirCaso(id){
     } catch(e){ toast(e.message, true); }
   };
   if (link) $('#m-copiar').onclick = async () => { try{ await navigator.clipboard.writeText(link); toast('Link copiado'); }catch(e){ prompt('Copie o link:', link); } };
+  const mc = $('#m-conf'); if (mc) mc.onclick = e => { if (e.target.closest('[data-confirma]')) marcarConfirmado(c.id); };
   if (arquivado) {
     $('#m-reativar').onclick = e => {
       const holder = document.createElement('div'); holder.innerHTML = destinoHTML(c); const pop = holder.firstElementChild;
@@ -1349,7 +1379,7 @@ function renderRel(){
   const ativ = (R.atividades||[]).filter(a => noPer(a.quando) && a.usuario !== 'Formulário' && a.acao !== 'Entrou no quadro');
   const pessoas = [...new Set((R.atividades||[]).map(a=>a.usuario).filter(u => u && u!=='Formulário'))].sort();
   const ativF = ativ.filter(a => !RF.pessoa || a.usuario === RF.pessoa).sort((a,b)=> a.quando < b.quando ? 1 : -1);
-  const tiposA = ['Criou cartão','Moveu','Viu arquivos novos','Valor','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
+  const tiposA = ['Criou cartão','Confirmou pedido','Moveu','Viu arquivos novos','Valor','Editou a solicitação','Responsável','Etiquetas','Comentou','Arquivou','Reativou','Editou etapas','Editou etiquetas'];
   const porPessoa = {}; ativ.forEach(a => { (porPessoa[a.usuario] ||= {}); porPessoa[a.usuario][a.acao] = (porPessoa[a.usuario][a.acao]||0)+1; });
   const ultAcesso = {}; (R.atividades||[]).forEach(a => { if (a.acao==='Entrou no quadro' && (!ultAcesso[a.usuario] || a.quando > ultAcesso[a.usuario])) ultAcesso[a.usuario] = a.quando; });
   const movs = contar(R.historico.filter(h => h.usuario && h.usuario!=='Formulário' && noPer(h.quando) && (!RF.quadro || h.paraQuadro===RF.quadro)), h => h.usuario);
@@ -1525,6 +1555,7 @@ async function demoApi(acao, d){
       const col = q.colunas.find(x => x.nome === d.de); if (col.publico === d.de) col.publico = d.para; col.nome = d.para;
       D.casos.forEach(c => { if (c.quadro === d.quadro && c.coluna === d.de) c.coluna = d.para; }); return {ok:true, quadros:D.quadros}; }
     case 'valor': { const c = D.casos.find(x => x.id === d.id); if (c) { c.valor = JSON.stringify(d.valor); c.valorTotal = String(d.valor.total); } return {ok:true}; }
+    case 'confirmar': { const c = caso(d.id); if (c) { c.confirmadoEm = new Date().toISOString(); c.confirmadoPor = S.user?.nome || ''; } return {ok:true}; }
     case 'visto': { const c = D.casos.find(x => x.id === d.id); if (c) { c.novosArquivos = ''; c.novosDesde = ''; } return {ok:true}; }
     case 'criar': { const agora = new Date().toISOString(), id = 'EX-' + String(D.casos.length + 100).padStart(5,'0');
       D.casos.push({id, criadoEm:agora, quadro:d.quadro, coluna:d.coluna, colunaDesde:agora, status:'ativo', paciente:d.dados.paciente, dentista:d.dados.dentista||'', servico:d.dados.servico||'', origem:d.dados.origem||'', posicao:String(Date.now()), anexos:'0', etiquetas:'', token:'demo'});
