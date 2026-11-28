@@ -335,6 +335,7 @@ details.serv label input{width:auto}
 .aq-tag{font-size:12px;font-weight:700;color:#7a5600;background:#fff3cd;border-radius:6px;padding:4px 8px;align-self:center}
 @media (max-width:760px){.aq-row{grid-template-columns:80px 1fr}.aq-row>:nth-child(3),.aq-row>:nth-child(4){display:none}.aq-acts{grid-column:1/-1;justify-content:flex-start}}
 .forn #b-arqv{display:none!important}
+.fim-tag{font-size:10.5px;font-weight:700;color:#5b6b7a;background:#e3e8ee;border-radius:5px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -602,16 +603,18 @@ function render(){
   if (S.view === 'quadro') renderBoard(); else if (S.view === 'entrada') renderEntrada(); else if (S.view === 'arq') renderArq(); else renderRel();
 }
 
+/* colunas de fim de linha (Entregues, Finalizados, Concluídos, Entrega Final) não contam nos números das abas */
+const colFinal = nome => /\bentregues\b|finaliz|conclu|entrega final/i.test(String(nome || ''));
 function renderTabs(){
   const nE = naEntrada().filter(bate).length;
   const btnE = `<button class="tab-entrada ${S.view==='entrada'?'on':''} ${nE?'tem':''}" id="b-entrada" title="Casos novos aguardando distribuição">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.5-6.9A2 2 0 0016.7 4H7.3a2 2 0 00-1.8 1.1z"/></svg>
     Entrada de casos <b>${nE}</b>${naEntrada().filter(nNovos).length?`<i class="tab-novo">📎${naEntrada().filter(nNovos).length}</i>`:''}</button><span class="tab-sep"></span>`;
   $('#tabs').innerHTML = btnE + quadrosTrabalho().map(q => {
-    const todos = S.casos.filter(c => c.quadro === q.nome);
-    const n = (S.busca || S.filtroLbl || S.filtroOrig) ? todos.filter(bate).length : todos.length;
+    const todos = S.casos.filter(c => c.quadro === q.nome), andamento = todos.filter(c => !colFinal(c.coluna));
+    const n = (S.busca || S.filtroLbl || S.filtroOrig) ? andamento.filter(bate).length : andamento.length;
     const nv = todos.filter(nNovos).length;
-    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl||S.filtroOrig)&&n?'hit':''}" data-q="${esc(q.nome)}">${esc(q.nome)}<span>${n}</span>${nv?`<i class="tab-novo" title="${nv} cartão(ões) com arquivo novo do dentista">📎${nv}</i>`:''}</button>`;
+    return `<button class="tab ${q.nome===S.atual&&S.view==='quadro'?'on':''} ${(S.busca||S.filtroLbl||S.filtroOrig)&&n?'hit':''}" data-q="${esc(q.nome)}" title="${andamento.length} em andamento · ${todos.length - andamento.length} finalizado(s)">${esc(q.nome)}<span>${n}</span>${nv?`<i class="tab-novo" title="${nv} cartão(ões) com arquivo novo do dentista">📎${nv}</i>`:''}</button>`;
   }).join('') + (S.perfil==='admin' && S.view==='quadro' ? `<button class="btn sm edit" id="b-etapas">Editar etapas</button><button class="btn sm" id="b-novoq">+ Novo quadro</button>` : '');
 }
 
@@ -657,7 +660,7 @@ function renderBoard(){
   $('#board').innerHTML = q.colunas.map(col => {
     const cs = S.casos.filter(c => c.quadro===q.nome && c.coluna===col.nome && bate(c)).sort((a,b)=> posDe(a) - posDe(b));
     return `<section class="col" data-col="${esc(col.nome)}">
-      <header><h3 class="col-tit" data-ren="${esc(col.nome)}" title="Clique para renomear a coluna">${esc(col.nome)}</h3>${col.avisar?'<span class="wa-tag" title="Ao entrar aqui, avisa o dentista">WhatsApp</span>':''}<span class="n">${cs.length}</span></header>
+      <header><h3 class="col-tit" data-ren="${esc(col.nome)}" title="Clique para renomear a coluna">${esc(col.nome)}</h3>${colFinal(col.nome)?'<span class="fim-tag" title="Casos finalizados: não entram no número da aba">finalizados</span>':''}${col.avisar?'<span class="wa-tag" title="Ao entrar aqui, avisa o dentista">WhatsApp</span>':''}<span class="n">${cs.length}</span></header>
       <div class="cards">${cs.map(cardHTML).join('') || '<div class="vazio">vazio</div>'}</div>
       <button type="button" class="add-card" data-add="${esc(col.nome)}">+ Adicionar um cartão</button></section>`;
   }).join('');
